@@ -332,6 +332,100 @@ class PendingVitals {
       );
 }
 
+/// صف واحد من [app_vitals_history] — كل قراءة على حدة (مش آخر قراءة بس)
+/// مع اسم الدكتور اللي سجّلها، لعرض الفيتالز مقسّمة بالأيام في جدول.
+class VitalHistoryReading {
+  const VitalHistoryReading({
+    required this.metric,
+    required this.value,
+    required this.unit,
+    required this.measuredAt,
+    required this.recordedBy,
+  });
+
+  final String metric;
+  final num value;
+  final String? unit;
+  final DateTime measuredAt;
+  final String? recordedBy;
+
+  factory VitalHistoryReading.fromJson(Map<String, dynamic> json) {
+    return VitalHistoryReading(
+      metric: json['metric']?.toString() ?? '',
+      value: (json['value'] as num?) ?? 0,
+      unit: json['unit']?.toString(),
+      measuredAt: DateTime.tryParse(json['measured_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
+      recordedBy: json['recorded_by']?.toString(),
+    );
+  }
+}
+
+/// صف واحد من [app_notes_history] — تُستخدم للـ History/التنبيهات وتعليمات
+/// العلاج/خطة العلاج/نتائج التحاليل، كل واحدة عبارة عن قائمة ملاحظات بنفس kind.
+class NoteHistoryEntry {
+  const NoteHistoryEntry({
+    required this.kind,
+    required this.body,
+    required this.authoredAt,
+    required this.authoredBy,
+  });
+
+  final String kind;
+  final String body;
+  final DateTime authoredAt;
+  final String? authoredBy;
+
+  factory NoteHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return NoteHistoryEntry(
+      kind: json['kind']?.toString() ?? '',
+      body: json['body']?.toString() ?? '',
+      authoredAt: DateTime.tryParse(json['authored_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
+      authoredBy: json['authored_by']?.toString(),
+    );
+  }
+}
+
+/// صف واحد من [app_medications_history] — الروشتة الكاملة (نشطة ومتوقفة).
+class MedicationHistoryEntry {
+  const MedicationHistoryEntry({
+    required this.id,
+    required this.name,
+    required this.dose,
+    required this.route,
+    required this.frequency,
+    required this.status,
+    required this.startsAt,
+    required this.endsAt,
+    required this.prescribedBy,
+  });
+
+  final String id;
+  final String name;
+  final String? dose;
+  final String? route;
+  final String? frequency;
+  final String status;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final String? prescribedBy;
+
+  bool get isActive => status == 'active';
+
+  factory MedicationHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return MedicationHistoryEntry(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      dose: json['dose']?.toString(),
+      route: json['route']?.toString(),
+      frequency: json['frequency']?.toString(),
+      status: json['status']?.toString() ?? 'active',
+      startsAt: DateTime.tryParse(json['starts_at']?.toString() ?? '')?.toLocal(),
+      endsAt: DateTime.tryParse(json['ends_at']?.toString() ?? '')?.toLocal(),
+      prescribedBy: json['prescribed_by']?.toString(),
+    );
+  }
+}
+
 class VitalSeriesPoint {
   const VitalSeriesPoint({required this.timestamp, required this.value});
 

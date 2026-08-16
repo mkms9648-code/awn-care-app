@@ -51,4 +51,7 @@ class AppConfig {
   static const String rpcStageVitals = 'app_stage_vitals';
   static const String rpcCommitVitals = 'app_commit_vitals';
   static const String rpcLatestPending = 'app_latest_pending';
+  static const String rpcVitalsHistory = 'app_vitals_history';
+  static const String rpcNotesHistory = 'app_notes_history';
+  static const String rpcMedicationsHistory = 'app_medications_history';
 }

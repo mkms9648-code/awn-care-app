@@ -21,6 +21,9 @@ import '../utils/prescription_pdf.dart';
 import '../utils/report_formatter.dart';
 import '../utils/report_pdf.dart';
 import '../utils/ticket_utils.dart';
+import '../widgets/collapsible_section.dart';
+import '../widgets/history_list_views.dart';
+import '../widgets/vitals_history_view.dart';
 import '../widgets/zoomable_attachment_image.dart';
 import 'chat_screen.dart';
 
@@ -43,6 +46,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   bool _loading = true;
   String? _error;
   bool _actionInProgress = false;
+
+  // بيانات الأقسام القابلة للطي اللي بتتحمّل lazy أول ما القسم يتفتح —
+  // نفس البيانات بتفضل محفوظة هنا (مش جوه CollapsibleSection) عشان لو
+  // القسم اتقفل وفتح تاني، مايعيدش النداء للسيرفر.
+  List<VitalHistoryReading>? _vitalsHistory;
+  List<MedicationHistoryEntry>? _prescriptionHistory;
+  List<NoteHistoryEntry>? _historyNotes;
+  List<NoteHistoryEntry>? _alertsNotes;
+  List<NoteHistoryEntry>? _treatmentPlanNotes;
+  List<NoteHistoryEntry>? _resultsNotes;
 
   @override
   void initState() {
@@ -68,6 +81,37 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadVitalsHistory() async {
+    final auth = context.read<AuthProvider>();
+    final data = await context.read<SupabaseService>().vitalsHistory(
+          entryCode: auth.entryCode!,
+          botKey: widget.botKey,
+          encounterId: widget.encounterId,
+        );
+    if (mounted) setState(() => _vitalsHistory = data);
+  }
+
+  Future<void> _loadPrescriptionHistory() async {
+    final auth = context.read<AuthProvider>();
+    final data = await context.read<SupabaseService>().medicationsHistory(
+          entryCode: auth.entryCode!,
+          botKey: widget.botKey,
+          encounterId: widget.encounterId,
+        );
+    if (mounted) setState(() => _prescriptionHistory = data);
+  }
+
+  Future<void> _loadNotesByKind(String kind, void Function(List<NoteHistoryEntry>) assign) async {
+    final auth = context.read<AuthProvider>();
+    final data = await context.read<SupabaseService>().notesHistory(
+          entryCode: auth.entryCode!,
+          botKey: widget.botKey,
+          encounterId: widget.encounterId,
+          kind: kind,
+        );
+    if (mounted) setState(() => assign(data));
   }
 
   Future<void> _confirmDischarge() async {
@@ -243,18 +287,67 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
   /// تنفيذ أوردر — إجراء اتجاه واحد بس من الواجهة (مفيش تراجع باللمسة، الدكتور
   /// طلب صراحة إن الحاجة لما تتعمل done أو تتمسح تفضل كده وميرجعش لايف تاني).
+  /// قبل ما تتقفل، بيسأل اختياري لو عايز يسجل النتيجة (تحليل/أشعة) — لو
+  /// دخلها، بتتسجل كـ note منفصلة (kind='result') تظهر في قسم "نتائج
+  /// التحاليل/الأشعة" المستقل، جنب order_completed في نفس النداء.
   Future<void> _completeOrder(OrderInfo o) async {
     if (_actionInProgress || !o.isPending) return;
+
+    final nameController = TextEditingController(text: o.name);
+    final resultController = TextEditingController();
+    final addResult = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mark as Done'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Optionally record the result now (skip if not ready yet):',
+              style: TextStyle(fontSize: 12.5, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Test')),
+            const SizedBox(height: 12),
+            TextField(
+              controller: resultController,
+              decoration: const InputDecoration(labelText: 'Result'),
+              maxLines: 2,
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Just Mark Done')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (addResult == null || !mounted) return;
+
     setState(() => _actionInProgress = true);
     try {
       final auth = context.read<AuthProvider>();
       final supabase = context.read<SupabaseService>();
-      await supabase.completeOrder(
-        entryCode: auth.entryCode!,
-        botKey: widget.botKey,
-        encounterId: widget.encounterId,
-        orderId: o.id,
-      );
+      final resultText = resultController.text.trim();
+      if (addResult && resultText.isNotEmpty) {
+        await supabase.completeOrderWithResult(
+          entryCode: auth.entryCode!,
+          botKey: widget.botKey,
+          encounterId: widget.encounterId,
+          orderId: o.id,
+          testName: nameController.text.trim().isEmpty ? o.name : nameController.text.trim(),
+          result: resultText,
+        );
+      } else {
+        await supabase.completeOrder(
+          entryCode: auth.entryCode!,
+          botKey: widget.botKey,
+          encounterId: widget.encounterId,
+          orderId: o.id,
+        );
+      }
       await _load();
     } catch (e) {
       if (mounted) {
@@ -323,7 +416,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   }
 
   static const _orderCategories = ['lab', 'imaging', 'consult', 'procedure'];
-  static const _noteKinds = ['complaint', 'history', 'exam', 'diagnosis', 'health_education'];
+  // history/health_education/treatment_plan/result بقى ليهم أقسام مخصصة
+  // (History/Alerts/Treatment Plan/Results) — مش هنا عشان مايتكررش نفس
+  // الملاحظة في مكانين.
+  static const _noteKinds = ['complaint', 'exam', 'diagnosis'];
   static const _vitalMetricLabels = {
     'bp': 'Blood Pressure',
     'hr': 'Heart Rate',
@@ -510,6 +606,103 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           ),
       successMessage: 'Order added.',
     );
+  }
+
+  /// فورم عام لأي قسم "ملاحظة موسومة" (History/التنبيهات وتعليمات العلاج/خطة
+  /// العلاج) — kind ثابت حسب القسم، فمفيش قائمة اختيار زي فورم الملاحظات
+  /// العادي. بيحدّث الداتا الخاصة بالقسم ده بس بعد الإضافة (مش الملخص كله).
+  Future<void> _showKindNoteDialog({
+    required String title,
+    required String hint,
+    required String kind,
+    required void Function(List<NoteHistoryEntry>) assign,
+  }) async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(labelText: hint),
+          maxLines: 4,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+        ],
+      ),
+    );
+    if (confirmed != true || controller.text.trim().isEmpty || !mounted) return;
+
+    final auth = context.read<AuthProvider>();
+    setState(() => _actionInProgress = true);
+    try {
+      await context.read<SupabaseService>().addNote(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            encounterId: widget.encounterId,
+            kind: kind,
+            body: controller.text.trim(),
+          );
+      await _loadNotesByKind(kind, assign);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  Future<void> _showAddResultDialog() async {
+    final testController = TextEditingController();
+    final resultController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Result'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: testController, decoration: const InputDecoration(labelText: 'Test'), autofocus: true),
+            const SizedBox(height: 12),
+            TextField(controller: resultController, decoration: const InputDecoration(labelText: 'Result'), maxLines: 2),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+        ],
+      ),
+    );
+    if (confirmed != true || testController.text.trim().isEmpty || resultController.text.trim().isEmpty || !mounted) {
+      return;
+    }
+
+    final auth = context.read<AuthProvider>();
+    setState(() => _actionInProgress = true);
+    try {
+      await context.read<SupabaseService>().addNote(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            encounterId: widget.encounterId,
+            kind: 'result',
+            body: '${testController.text.trim()}: ${resultController.text.trim()}',
+          );
+      await _loadNotesByKind('result', (v) => _resultsNotes = v);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
   }
 
   Future<void> _showAddNoteDialog() async {
@@ -855,88 +1048,201 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: _load,
+                  onRefresh: () async {
+                    await _load();
+                    // اللستات القابلة للطي بتاعت الأقسام lazy-loaded بتتحدّث
+                    // بس لو كانت اتفتحت قبل كده (مفيش داعي نحمّل حاجة الطبيب
+                    // ماشافهاش أصلاً).
+                    if (_vitalsHistory != null) await _loadVitalsHistory();
+                    if (_prescriptionHistory != null) await _loadPrescriptionHistory();
+                    if (_historyNotes != null) await _loadNotesByKind('history', (v) => _historyNotes = v);
+                    if (_alertsNotes != null) await _loadNotesByKind('health_education', (v) => _alertsNotes = v);
+                    if (_treatmentPlanNotes != null) {
+                      await _loadNotesByKind('treatment_plan', (v) => _treatmentPlanNotes = v);
+                    }
+                    if (_resultsNotes != null) await _loadNotesByKind('result', (v) => _resultsNotes = v);
+                  },
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
                       _headerCard(theme),
-                      const SizedBox(height: 16),
-                      _sectionTitle('Vitals', theme, onAdd: isActive ? _showAddVitalDialog : null),
-                      if (_summary!.latestVitals.isEmpty) _emptyHint('No readings yet'),
-                      ..._buildVitalsTiles(theme),
-                      const SizedBox(height: 16),
-                      _sectionTitle(
-                        'Orders (${_summary!.openOrders.length})',
-                        theme,
+                      const SizedBox(height: 4),
+
+                      CollapsibleSection(
+                        title: 'Vitals',
+                        onAdd: isActive ? _showAddVitalDialog : null,
+                        onExpand: _loadVitalsHistory,
+                        child: VitalsHistoryView(
+                          readings: _vitalsHistory ?? const [],
+                          encounterOpenedAt: _summary!.encounter.openedAt,
+                        ),
+                      ),
+
+                      CollapsibleSection(
+                        title: 'Orders',
+                        count: _summary!.openOrders.length,
+                        initiallyExpanded: true,
                         onAdd: isActive ? _showAddOrderDialog : null,
+                        child: Column(
+                          children: [
+                            if (_summary!.openOrders.isEmpty) _emptyHint('No orders yet'),
+                            ..._summary!.openOrders.map((o) => _orderTile(o, theme)),
+                          ],
+                        ),
                       ),
-                      if (_summary!.openOrders.isEmpty) _emptyHint('No orders yet'),
-                      ..._summary!.openOrders.map((o) => _orderTile(o, theme)),
-                      const SizedBox(height: 16),
-                      _sectionTitle(
-                        'Active Medications (${_summary!.activeMedications.length})',
-                        theme,
+
+                      CollapsibleSection(
+                        title: 'Lab & Imaging Results',
+                        onAdd: isActive ? _showAddResultDialog : null,
+                        onExpand: () => _loadNotesByKind('result', (v) => _resultsNotes = v),
+                        child: NoteHistoryListView(
+                          notes: _resultsNotes ?? const [],
+                          emptyHint: 'No results recorded yet',
+                        ),
+                      ),
+
+                      CollapsibleSection(
+                        title: 'Prescription',
                         onAdd: isActive ? _showAddPrescriptionDialog : null,
+                        onExpand: _loadPrescriptionHistory,
+                        child: MedicationHistoryListView(medications: _prescriptionHistory ?? const []),
                       ),
-                      if (_summary!.activeMedications.isEmpty) _emptyHint('No active medications'),
-                      ..._summary!.activeMedications.map((m) => _medicationTile(m, theme)),
-                      const SizedBox(height: 16),
-                      _sectionTitle(
-                        'Commitments (${_summary!.openCommitments.length})',
-                        theme,
+
+                      CollapsibleSection(
+                        title: 'Treatment Plan',
+                        onAdd: isActive
+                            ? () => _showKindNoteDialog(
+                                  title: 'Add Treatment Plan',
+                                  hint: 'Plan',
+                                  kind: 'treatment_plan',
+                                  assign: (v) => _treatmentPlanNotes = v,
+                                )
+                            : null,
+                        onExpand: () => _loadNotesByKind('treatment_plan', (v) => _treatmentPlanNotes = v),
+                        child: NoteHistoryListView(
+                          notes: _treatmentPlanNotes ?? const [],
+                          emptyHint: 'No treatment plan yet',
+                        ),
+                      ),
+
+                      CollapsibleSection(
+                        title: 'Alerts & Patient Instructions',
+                        onAdd: isActive
+                            ? () => _showKindNoteDialog(
+                                  title: 'Add Instruction',
+                                  hint: 'e.g. Boiled food only for 3 days',
+                                  kind: 'health_education',
+                                  assign: (v) => _alertsNotes = v,
+                                )
+                            : null,
+                        onExpand: () => _loadNotesByKind('health_education', (v) => _alertsNotes = v),
+                        child: NoteHistoryListView(
+                          notes: _alertsNotes ?? const [],
+                          emptyHint: 'No instructions yet',
+                        ),
+                      ),
+
+                      CollapsibleSection(
+                        title: 'History',
+                        onAdd: isActive
+                            ? () => _showKindNoteDialog(
+                                  title: 'Add to History',
+                                  hint: 'History',
+                                  kind: 'history',
+                                  assign: (v) => _historyNotes = v,
+                                )
+                            : null,
+                        onExpand: () => _loadNotesByKind('history', (v) => _historyNotes = v),
+                        child: NoteHistoryListView(
+                          notes: _historyNotes ?? const [],
+                          emptyHint: 'No history recorded yet',
+                        ),
+                      ),
+
+                      CollapsibleSection(
+                        title: 'Commitments',
+                        count: _summary!.openCommitments.length,
+                        initiallyExpanded: true,
                         onAdd: isActive ? _showAddFollowUpDialog : null,
+                        child: Column(
+                          children: [
+                            if (_summary!.openCommitments.isEmpty) _emptyHint('No open commitments'),
+                            ..._summary!.openCommitments.map((c) => _commitmentTile(c, theme)),
+                          ],
+                        ),
                       ),
-                      if (_summary!.openCommitments.isEmpty) _emptyHint('No open commitments'),
-                      ..._summary!.openCommitments.map((c) => _commitmentTile(c, theme)),
-                      const SizedBox(height: 16),
-                      _sectionTitle(
-                        'Complications (${_summary!.openComplications.length})',
-                        theme,
+
+                      CollapsibleSection(
+                        title: 'Complications',
+                        count: _summary!.openComplications.length,
+                        initiallyExpanded: true,
                         onAdd: isActive ? _showAddComplicationDialog : null,
-                      ),
-                      if (_summary!.openComplications.isEmpty) _emptyHint('No open complications'),
-                      ..._summary!.openComplications.map(
-                        (c) => ListTile(
-                          leading: const Icon(Icons.warning_amber, color: AppTheme.accentOrange, size: 20),
-                          title: Text(c.description),
-                          dense: true,
+                        child: Column(
+                          children: [
+                            if (_summary!.openComplications.isEmpty) _emptyHint('No open complications'),
+                            ..._summary!.openComplications.map(
+                              (c) => ListTile(
+                                leading: const Icon(Icons.warning_amber, color: AppTheme.accentOrange, size: 20),
+                                title: Text(c.description),
+                                dense: true,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      _sectionTitle('Notes', theme, onAdd: isActive ? _showAddNoteDialog : null),
-                      if (_summary!.recentNotes.isEmpty) _emptyHint('No notes yet'),
-                      ..._summary!.recentNotes.map(
-                        (n) => ListTile(
-                          leading: const Icon(Icons.note_outlined, size: 20),
-                          title: Text(n.body),
-                          subtitle: Text(n.kind),
-                          dense: true,
+
+                      CollapsibleSection(
+                        title: 'Notes',
+                        initiallyExpanded: true,
+                        onAdd: isActive ? _showAddNoteDialog : null,
+                        child: Column(
+                          children: [
+                            if (_generalNotes.isEmpty) _emptyHint('No notes yet'),
+                            ..._generalNotes.map(
+                              (n) => ListTile(
+                                leading: const Icon(Icons.note_outlined, size: 20),
+                                title: Text(n.body),
+                                subtitle: Text(n.kind),
+                                dense: true,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _sectionTitle(
-                              'Attachments (${_summary!.attachments.length})',
-                              theme,
-                              onAdd: isActive ? _showAddPhotoMenu : null,
-                            ),
-                          ),
-                          if (_summary!.attachments.isNotEmpty)
-                            IconButton(
-                              icon: const Icon(Icons.save_alt, size: 20),
-                              tooltip: 'Save photos to gallery',
-                              onPressed: _actionInProgress ? null : _saveAttachmentsToGallery,
-                            ),
-                        ],
+
+                      CollapsibleSection(
+                        title: 'Attachments',
+                        count: _summary!.attachments.length,
+                        initiallyExpanded: true,
+                        onAdd: isActive ? _showAddPhotoMenu : null,
+                        child: Column(
+                          children: [
+                            if (_summary!.attachments.isNotEmpty)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton.icon(
+                                  onPressed: _actionInProgress ? null : _saveAttachmentsToGallery,
+                                  icon: const Icon(Icons.save_alt, size: 18),
+                                  label: const Text('Save to gallery'),
+                                ),
+                              ),
+                            if (_summary!.attachments.isEmpty) _emptyHint('No attachments yet'),
+                            _attachmentsGrid(context),
+                          ],
+                        ),
                       ),
-                      if (_summary!.attachments.isEmpty) _emptyHint('No attachments yet'),
-                      _attachmentsGrid(context),
                     ],
                   ),
                 ),
     );
+  }
+
+  /// ملاحظات القسم العام (complaint/exam/diagnosis) بس — history/
+  /// health_education/treatment_plan/result بقى ليهم أقسامهم المخصصة، فمبتظهرش
+  /// هنا تاني.
+  List<NoteInfo> get _generalNotes {
+    const dedicatedKinds = {'history', 'health_education', 'treatment_plan', 'result'};
+    return _summary!.recentNotes.where((n) => !dedicatedKinds.contains(n.kind)).toList();
   }
 
   Widget _headerCard(ThemeData theme) {
@@ -1006,28 +1312,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     );
   }
 
-  Widget _sectionTitle(String title, ThemeData theme, {VoidCallback? onAdd}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-          ),
-          if (onAdd != null)
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: onAdd,
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(Icons.add_circle_outline, size: 20, color: AppTheme.primaryBlue),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   Widget _emptyHint(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1036,59 +1320,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   }
 
   static final _vitalDateFormat = DateFormat('dd-MM-yyyy, hh:mm a');
-
-  static const _metricLabels = {
-    'hr': 'Heart Rate',
-    'temp': 'Temperature',
-    'spo2': 'SpO2',
-    'rbs': 'RBS',
-    'gcs': 'GCS',
-  };
-
-  /// الضغط متسجّل كقراءتين منفصلتين (bp_sys / bp_dia) — بندمجهم في سطر واحد
-  /// "120/80" بدل ما يظهروا كصفين لوحدهم، مطابق للشكل اللي فريق العيادة متعود
-  /// عليه في البوت الأصلي.
-  List<Widget> _buildVitalsTiles(ThemeData theme) {
-    final vitals = [..._summary!.latestVitals];
-    VitalReading? sys;
-    VitalReading? dia;
-    for (final v in vitals) {
-      if (v.metric == 'bp_sys') sys = v;
-      if (v.metric == 'bp_dia') dia = v;
-    }
-    vitals.removeWhere((v) => v.metric == 'bp_sys' || v.metric == 'bp_dia');
-
-    final tiles = <Widget>[];
-    if (sys != null || dia != null) {
-      final at = sys?.measuredAt ?? dia!.measuredAt;
-      tiles.add(_vitalCard(
-        label: 'Blood Pressure',
-        value: '${sys?.value.round() ?? '—'}/${dia?.value.round() ?? '—'}',
-        unit: sys?.unit ?? dia?.unit ?? 'mmHg',
-        at: at,
-      ));
-    }
-    for (final v in vitals) {
-      tiles.add(_vitalCard(
-        label: _metricLabels[v.metric] ?? v.metric,
-        value: v.value.toString(),
-        unit: v.unit ?? '',
-        at: v.measuredAt,
-      ));
-    }
-    return tiles;
-  }
-
-  Widget _vitalCard({required String label, required String value, required String unit, required DateTime at}) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const Icon(Icons.monitor_heart_outlined, color: AppTheme.primaryBlue),
-        title: Text('$label: $value $unit'),
-        subtitle: Text('Recorded at ${_vitalDateFormat.format(at)}'),
-      ),
-    );
-  }
 
   /// بيبني سطر زي "Ordered by Dr. X at 04-08-2026, 01:18 PM" — بيتجاهل الاسم
   /// أو الوقت لو مش موجود (بيانات قديمة قبل migration 019 مثلًا).
@@ -1139,17 +1370,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               )
             : null,
         onTap: o.isPending && !_actionInProgress ? () => _completeOrder(o) : null,
-      ),
-    );
-  }
-
-  Widget _medicationTile(MedicationInfo m, ThemeData theme) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const Icon(Icons.medication_outlined, color: AppTheme.primaryBlue),
-        title: Text(m.name),
-        subtitle: Text([m.dose, m.route, m.frequency].whereType<String>().join(' · ')),
       ),
     );
   }

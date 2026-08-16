@@ -105,6 +105,71 @@ class SupabaseService {
     return results.map((e) => Encounter.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// كل قراءات الفيتالز للزيارة (مش آخر قراءة بس) — تُحمّل بس لما قسم
+  /// الفيتالز في كارت المريض يتفتح (lazy load)، عشان الشاشة الافتراضية تفضل
+  /// خفيفة.
+  Future<List<VitalHistoryReading>> vitalsHistory({
+    required String entryCode,
+    required String botKey,
+    required String encounterId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcVitalsHistory,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': botKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+      },
+    );
+    final readings = (result as Map<String, dynamic>)['readings'] as List<dynamic>? ?? [];
+    return readings.map((e) => VitalHistoryReading.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// كل الملاحظات للزيارة، اختياري تتفلتر بـ kind — بتغذّي أقسام الهيستوري/
+  /// التنبيهات وتعليمات العلاج/خطة العلاج/نتائج التحاليل.
+  Future<List<NoteHistoryEntry>> notesHistory({
+    required String entryCode,
+    required String botKey,
+    required String encounterId,
+    String? kind,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcNotesHistory,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': botKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+        if (kind != null) 'p_kind': kind,
+      },
+    );
+    final notes = (result as Map<String, dynamic>)['notes'] as List<dynamic>? ?? [];
+    return notes.map((e) => NoteHistoryEntry.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// الروشتة الكاملة (أدوية نشطة ومتوقفة) — مفيدة لو المريض رجع تاني للعيادة.
+  Future<List<MedicationHistoryEntry>> medicationsHistory({
+    required String entryCode,
+    required String botKey,
+    required String encounterId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcMedicationsHistory,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': botKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+      },
+    );
+    final meds = (result as Map<String, dynamic>)['medications'] as List<dynamic>? ?? [];
+    return meds.map((e) => MedicationHistoryEntry.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<PatientSummary> patientSummary({
     required String entryCode,
     required String botKey,
@@ -209,15 +274,14 @@ class SupabaseService {
     }
   }
 
-  /// نداء عام لأي حدث واحد عبر app_ingest_events — نفس البوابة اللي
-  /// dischargeEncounter/admitToUnit بتستخدمها، عشان أي إجراء "حتمي وواضح"
-  /// (مش محتاج فهم لغوي) يتنفذ مباشرة من التطبيق من غير ما يعدي بالشات.
-  Future<void> _ingestSingleEvent({
+  /// نداء عام لمجموعة أحداث عبر app_ingest_events في نداء واحد ذرّي — يا كلهم
+  /// يتسجلوا يا محدش. dischargeEncounter/admitToUnit وباقي الإجراءات
+  /// "الحتمية والواضحة" (مش محتاجة فهم لغوي) بتستخدمها عشان تتنفذ مباشرة من
+  /// التطبيق من غير ما تعدي بالشات.
+  Future<void> _ingestEvents({
     required String entryCode,
     required String botKey,
-    required String eventType,
-    required String encounterId,
-    required Map<String, dynamic> payload,
+    required List<Map<String, dynamic>> events,
     required String actionLabel,
   }) async {
     if (AppConfig.useMockData || _client == null) return;
@@ -227,9 +291,7 @@ class SupabaseService {
         'p_platform': AppConfig.platform,
         'p_bot_key': botKey,
         'p_chat_id': entryCode,
-        'p_events': [
-          {'event_type': eventType, 'encounter_id': encounterId, 'payload': payload},
-        ],
+        'p_events': events,
         'p_dry_run': false,
       },
     );
@@ -238,6 +300,23 @@ class SupabaseService {
       throw Exception('$actionLabel failed: ${result['problems'] ?? result}');
     }
   }
+
+  Future<void> _ingestSingleEvent({
+    required String entryCode,
+    required String botKey,
+    required String eventType,
+    required String encounterId,
+    required Map<String, dynamic> payload,
+    required String actionLabel,
+  }) =>
+      _ingestEvents(
+        entryCode: entryCode,
+        botKey: botKey,
+        events: [
+          {'event_type': eventType, 'encounter_id': encounterId, 'payload': payload},
+        ],
+        actionLabel: actionLabel,
+      );
 
   /// تنفيذ أوردر (checkbox في كارت المريض).
   Future<void> completeOrder({
@@ -252,6 +331,31 @@ class SupabaseService {
         eventType: 'order_completed',
         encounterId: encounterId,
         payload: {'order_id': orderId},
+        actionLabel: 'Complete order',
+      );
+
+  /// تنفيذ أوردر ومعاه نتيجة التحليل/الأشعة في نفس اللحظة — حدثين في نداء
+  /// واحد ذرّي (order_completed + note_added kind='result') عشان النتيجة
+  /// تظهر في قسم "نتائج التحاليل/الأشعة" المنفصل عن الطلبات.
+  Future<void> completeOrderWithResult({
+    required String entryCode,
+    required String botKey,
+    required String encounterId,
+    required String orderId,
+    required String testName,
+    required String result,
+  }) =>
+      _ingestEvents(
+        entryCode: entryCode,
+        botKey: botKey,
+        events: [
+          {'event_type': 'order_completed', 'encounter_id': encounterId, 'payload': {'order_id': orderId}},
+          {
+            'event_type': 'note_added',
+            'encounter_id': encounterId,
+            'payload': {'kind': 'result', 'body': '$testName: $result'},
+          },
+        ],
         actionLabel: 'Complete order',
       );
 
