@@ -313,6 +313,23 @@ class PendingVitals {
       measuredAt: DateTime.tryParse(json['measured_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
     );
   }
+
+  /// للتخزين المحلي (chat history) — مش نفس شكل رد الـ RPC (fromJson فوق)،
+  /// عشان measuredAt هنا لازم يترمّز/يتفكّك كـ ISO string بدل timestamptz خام.
+  Map<String, dynamic> toJson() => {
+        'pending_id': pendingId,
+        'encounter_id': encounterId,
+        'readings': readings,
+        'measured_at': measuredAt.toIso8601String(),
+      };
+
+  factory PendingVitals.fromStoredJson(Map<String, dynamic> json) => PendingVitals(
+        pendingId: json['pending_id']?.toString() ?? '',
+        encounterId: json['encounter_id']?.toString() ?? '',
+        readings:
+            (json['readings'] as List<dynamic>? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList(),
+        measuredAt: DateTime.tryParse(json['measured_at']?.toString() ?? '') ?? DateTime.now(),
+      );
 }
 
 class VitalSeriesPoint {

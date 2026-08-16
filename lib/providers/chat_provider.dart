@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/chat_message.dart';
 import '../models/patient_summary.dart';
+import '../services/chat_history_store.dart';
 import '../services/chat_service.dart';
 import '../services/supabase_service.dart';
 import '../utils/error_utils.dart';
@@ -32,9 +33,7 @@ class ChatProvider extends ChangeNotifier {
         _bot = bot,
         _encounterId = encounterId,
         _ticket = ticket,
-        _patientName = patientName {
-    _addWelcomeMessage();
-  }
+        _patientName = patientName;
 
   final ChatService _chatService;
   final SupabaseService _supabaseService;
@@ -75,6 +74,25 @@ class ChatProvider extends ChangeNotifier {
             'complaint, notes, orders... it all gets saved to this patient directly.',
       ),
     );
+  }
+
+  /// هيستوري محلي دائم لنفس المريض ده — زي تيليجرام، لو الطبيب خرج ورجع
+  /// يلاقي كل الرسايل بتاريخها ووقتها. لازم تتنادى بعد الإنشاء مباشرة
+  /// (زي: `ChatProvider(...)..loadHistory()`).
+  Future<void> loadHistory() async {
+    final saved = await ChatHistoryStore.load(_encounterId);
+    _messages
+      ..clear()
+      ..addAll(saved);
+    if (_messages.isEmpty) {
+      _addWelcomeMessage();
+    }
+    notifyListeners();
+  }
+
+  void _persist() {
+    // Fire-and-forget — الحفظ مش لازم يوقف تحديث الواجهة.
+    unawaited(ChatHistoryStore.save(_encounterId, _messages));
   }
 
   Future<void> sendText(String text) async {
@@ -123,6 +141,7 @@ class ChatProvider extends ChangeNotifier {
       _error = describeError(e);
     } finally {
       _isSending = false;
+      _persist();
       notifyListeners();
     }
   }
@@ -207,6 +226,7 @@ class ChatProvider extends ChangeNotifier {
       _isSending = false;
       _recordingPath = null;
       _recordingStarted = null;
+      _persist();
       notifyListeners();
     }
   }
@@ -253,6 +273,7 @@ class ChatProvider extends ChangeNotifier {
       _error = describeError(e);
     } finally {
       _isSending = false;
+      _persist();
       notifyListeners();
     }
   }
@@ -392,6 +413,7 @@ class ChatProvider extends ChangeNotifier {
     } catch (e) {
       _error = describeError(e);
     }
+    _persist();
     notifyListeners();
   }
 
@@ -407,6 +429,7 @@ class ChatProvider extends ChangeNotifier {
       isConfirmed: false,
     );
     msg.status = ChatMessageStatus.sent;
+    _persist();
     notifyListeners();
 
     _messages.add(

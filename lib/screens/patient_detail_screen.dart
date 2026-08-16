@@ -375,7 +375,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 encounterId: widget.encounterId,
                 ticket: ticket,
                 patientName: _summary!.patient.name,
-              ),
+              )..loadHistory(),
               child: ChatScreen(title: '${_summary!.patient.name} — #$ticket'),
             ),
           ),

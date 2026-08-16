@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/chat_message.dart';
 import '../theme/app_theme.dart';
 import 'review_card_widget.dart';
 import 'zoomable_attachment_image.dart';
+
+final _timeFmt = DateFormat('h:mm a');
 
 class ChatBubble extends StatelessWidget {
   const ChatBubble({
@@ -24,15 +27,27 @@ class ChatBubble extends StatelessWidget {
     if (message.type == ChatMessageType.reviewCard && message.reviewCard != null) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: ReviewCardWidget(
-          data: message.reviewCard!,
-          subtitle: message.text,
-          onConfirm: message.reviewCard!.isConfirmed == null
-              ? (edited) => onConfirmReview?.call(message.id, edited)
-              : null,
-          onReject: message.reviewCard!.isConfirmed == null
-              ? () => onRejectReview?.call(message.id)
-              : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ReviewCardWidget(
+              data: message.reviewCard!,
+              subtitle: message.text,
+              onConfirm: message.reviewCard!.isConfirmed == null
+                  ? (edited) => onConfirmReview?.call(message.id, edited)
+                  : null,
+              onReject: message.reviewCard!.isConfirmed == null
+                  ? () => onRejectReview?.call(message.id)
+                  : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 3, left: 4),
+              child: Text(
+                _timeFmt.format(message.createdAt),
+                style: TextStyle(fontSize: 10, color: Theme.of(context).hintColor),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -102,6 +117,17 @@ class ChatBubble extends StatelessWidget {
                       style: TextStyle(fontSize: 11, color: AppTheme.criticalRed),
                     ),
                   ],
+                ),
+              ),
+            if (message.status != ChatMessageStatus.sending)
+              Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Text(
+                  _timeFmt.format(message.createdAt),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isUser ? Colors.white70 : theme.hintColor,
+                  ),
                 ),
               ),
           ],

@@ -2,11 +2,53 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/chat_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/chat_bubble.dart';
+
+bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+/// فاصل تاريخ زي تيليجرام — "Today"/"Yesterday"/تاريخ كامل — بيظهر أول رسالة
+/// كل يوم جديد في المحادثة.
+class _DateHeader extends StatelessWidget {
+  const _DateHeader({required this.date});
+
+  final DateTime date;
+
+  static final _fullFmt = DateFormat('MMMM d, yyyy');
+
+  String _label() {
+    final now = DateTime.now();
+    if (_isSameDay(date, now)) return 'Today';
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (_isSameDay(date, yesterday)) return 'Yesterday';
+    return _fullFmt.format(date);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.hintColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _label(),
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: theme.hintColor),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, this.title = 'Chat'});
@@ -112,10 +154,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemCount: chat.messages.length,
                     itemBuilder: (context, index) {
                       final msg = chat.messages[index];
-                      return ChatBubble(
-                        message: msg,
-                        onConfirmReview: chat.confirmReviewCard,
-                        onRejectReview: chat.rejectReviewCard,
+                      final showDateHeader =
+                          index == 0 || !_isSameDay(chat.messages[index - 1].createdAt, msg.createdAt);
+                      return Column(
+                        children: [
+                          if (showDateHeader) _DateHeader(date: msg.createdAt),
+                          ChatBubble(
+                            message: msg,
+                            onConfirmReview: chat.confirmReviewCard,
+                            onRejectReview: chat.rejectReviewCard,
+                          ),
+                        ],
                       );
                     },
                   ),
