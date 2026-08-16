@@ -17,6 +17,7 @@ import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/clipboard_utils.dart';
 import '../utils/error_utils.dart';
+import '../utils/prescription_pdf.dart';
 import '../utils/report_formatter.dart';
 import '../utils/report_pdf.dart';
 import '../utils/ticket_utils.dart';
@@ -212,6 +213,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         body: formatPatientReport(_summary!),
         filename: 'awn-care-${_summary!.patient.name}.pdf',
       );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportPrescription() async {
+    if (_summary == null) return;
+    if (_summary!.activeMedications.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active medications to include in a prescription.')),
+      );
+      return;
+    }
+    try {
+      await sharePrescriptionPdf(_summary!);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -772,10 +792,20 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         actions: _summary == null
             ? null
             : [
-                IconButton(
+                PopupMenuButton<String>(
                   icon: const Icon(Icons.ios_share),
-                  tooltip: 'Export report',
-                  onPressed: _exportPatientReport,
+                  tooltip: 'Export',
+                  onSelected: (v) => v == 'prescription' ? _exportPrescription() : _exportPatientReport(),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'report',
+                      child: ListTile(dense: true, leading: Icon(Icons.description_outlined), title: Text('Full Report')),
+                    ),
+                    PopupMenuItem(
+                      value: 'prescription',
+                      child: ListTile(dense: true, leading: Icon(Icons.medication_outlined), title: Text('Prescription (Rx)')),
+                    ),
+                  ],
                 ),
                 if (isActive)
                   if (_actionInProgress)
