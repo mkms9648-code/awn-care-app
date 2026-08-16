@@ -275,7 +275,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       return;
     }
     try {
-      await sharePrescriptionPdf(_summary!);
+      final auth = context.read<AuthProvider>();
+      // التعليمات (kind='health_education') بتتحط تحت الأدوية في نفس الورقة —
+      // نفس المحتوى اللي في قسم "Alerts & Patient Instructions"، مفيش داعي
+      // الطبيب يخش هناك تاني قبل التصدير.
+      final instructions = await context.read<SupabaseService>().notesHistory(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            encounterId: widget.encounterId,
+            kind: 'health_education',
+          );
+      await sharePrescriptionPdf(_summary!, instructions: instructions);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1101,29 +1111,36 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         ),
                       ),
 
-                      CollapsibleSection(
-                        title: 'Prescription',
-                        onAdd: isActive ? _showAddPrescriptionDialog : null,
-                        onExpand: _loadPrescriptionHistory,
-                        child: MedicationHistoryListView(medications: _prescriptionHistory ?? const []),
-                      ),
-
-                      CollapsibleSection(
-                        title: 'Treatment Plan',
-                        onAdd: isActive
-                            ? () => _showKindNoteDialog(
-                                  title: 'Add Treatment Plan',
-                                  hint: 'Plan',
-                                  kind: 'treatment_plan',
-                                  assign: (v) => _treatmentPlanNotes = v,
-                                )
-                            : null,
-                        onExpand: () => _loadNotesByKind('treatment_plan', (v) => _treatmentPlanNotes = v),
-                        child: NoteHistoryListView(
-                          notes: _treatmentPlanNotes ?? const [],
-                          emptyHint: 'No treatment plan yet',
+                      // الروشتة والخطة العلاجية بيبقى واحد بس فعّال حسب
+                      // التاب — العيادة والطوارئ بيستخدموا "روشتة"، الراوند
+                      // بيستخدم "خطة علاج" (متابعة يومية سردية بدل روشتة
+                      // منفصلة). التقسيم ده بيلغي أي التباس ممكن يحصل للـ AI
+                      // بين الاتنين، لأنه مفيش اختيار أصلًا في كل تاب.
+                      if (widget.botKey != 'round')
+                        CollapsibleSection(
+                          title: 'Prescription',
+                          onAdd: isActive ? _showAddPrescriptionDialog : null,
+                          onExpand: _loadPrescriptionHistory,
+                          child: MedicationHistoryListView(medications: _prescriptionHistory ?? const []),
                         ),
-                      ),
+
+                      if (widget.botKey == 'round')
+                        CollapsibleSection(
+                          title: 'Treatment Plan',
+                          onAdd: isActive
+                              ? () => _showKindNoteDialog(
+                                    title: 'Add Treatment Plan',
+                                    hint: 'Plan',
+                                    kind: 'treatment_plan',
+                                    assign: (v) => _treatmentPlanNotes = v,
+                                  )
+                              : null,
+                          onExpand: () => _loadNotesByKind('treatment_plan', (v) => _treatmentPlanNotes = v),
+                          child: NoteHistoryListView(
+                            notes: _treatmentPlanNotes ?? const [],
+                            emptyHint: 'No treatment plan yet',
+                          ),
+                        ),
 
                       CollapsibleSection(
                         title: 'Alerts & Patient Instructions',

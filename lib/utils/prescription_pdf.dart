@@ -66,8 +66,13 @@ pw.Widget _infoRow(String label, String value) {
 }
 
 /// بيبني PDF روشتة لقائمة أدوية فعالة — مفيش استدعاء ليها لو القائمة فاضية،
-/// الكارتر (patient_detail_screen) بيتأكد من كده الأول.
-Future<Uint8List> buildPrescriptionPdf(PatientSummary summary) async {
+/// الكارتر (patient_detail_screen) بيتأكد من كده الأول. [instructions]
+/// اختياري — تعليمات المريض (kind='health_education') بتتحط تحت الأدوية لو
+/// موجودة، عشان تبقى جزء من نفس الورقة اللي المريض هياخدها معاه.
+Future<Uint8List> buildPrescriptionPdf(
+  PatientSummary summary, {
+  List<NoteHistoryEntry> instructions = const [],
+}) async {
   await _ensureAssets();
   final doc = pw.Document();
   final theme = pw.ThemeData.withFont(base: _regular!, bold: _bold!);
@@ -217,6 +222,42 @@ Future<Uint8List> buildPrescriptionPdf(PatientSummary summary) async {
             ),
           ],
 
+          // ===== Patient instructions =====
+          if (instructions.isNotEmpty) ...[
+            pw.SizedBox(height: 20),
+            pw.Text(
+              'Instructions',
+              style: pw.TextStyle(font: _bold, fontSize: 12.5, color: _brandBlueDeep),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: _brandBlueLight,
+                borderRadius: pw.BorderRadius.circular(8),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  for (final note in instructions)
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 4),
+                      child: pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('•  ', style: pw.TextStyle(font: _bold, fontSize: 10, color: _brandBlue)),
+                          pw.Expanded(
+                            child: pw.Text(note.body, style: pw.TextStyle(font: _regular, fontSize: 10)),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+
           // ===== Signature =====
           pw.SizedBox(height: 40),
           pw.Row(
@@ -252,8 +293,11 @@ Future<Uint8List> buildPrescriptionPdf(PatientSummary summary) async {
   return doc.save();
 }
 
-Future<void> sharePrescriptionPdf(PatientSummary summary) async {
-  final bytes = await buildPrescriptionPdf(summary);
+Future<void> sharePrescriptionPdf(
+  PatientSummary summary, {
+  List<NoteHistoryEntry> instructions = const [],
+}) async {
+  final bytes = await buildPrescriptionPdf(summary, instructions: instructions);
   final dir = await getTemporaryDirectory();
   final safeName = summary.patient.name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '-');
   final file = File('${dir.path}/awn-care-rx-$safeName.pdf');
