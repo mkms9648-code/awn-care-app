@@ -6,9 +6,12 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../models/chat_message.dart';
 import '../models/patient_summary.dart';
+import '../models/portal_escalation.dart';
 import '../models/unit_info.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
@@ -467,6 +470,159 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         SnackBar(content: Text(isClinic ? 'Visit closed.' : 'Patient discharged.')),
       );
       Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  // ===========================================================================
+  // كود متابعة البورتال — بيدّي المريض دخول لشات AI عام بعد الزيارة. الكود
+  // الصريح بيترجع مرة واحدة بس من app_generate_portal_code (السيرفر بيخزّن
+  // الهاش بس بعد كده)، فلازم يتعرض فورًا هنا ويتقفل. متاح لأي زيارة (مش
+  // عيادة بس) وبغض النظر عن حالتها (active/discharged).
+  // ===========================================================================
+
+  Future<void> _generateFollowUpCode() async {
+    if (_actionInProgress) return;
+    setState(() => _actionInProgress = true);
+    PortalCodeResult? result;
+    try {
+      final auth = context.read<AuthProvider>();
+      result = await context.read<SupabaseService>().generatePortalCode(
+            entryCode: auth.entryCode!,
+            encounterId: widget.encounterId,
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+    if (result != null && mounted) {
+      await _showPortalCodeSheet(result);
+    }
+  }
+
+  Future<void> _showPortalCodeSheet(PortalCodeResult result) async {
+    final patientName = result.patientName.isNotEmpty ? result.patientName : (_summary?.patient.name ?? 'this patient');
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 8,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Follow-up Code',
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text('For $patientName', style: TextStyle(color: Theme.of(ctx).hintColor)),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                child: QrImageView(data: result.code, size: 180, backgroundColor: Colors.white),
+              ),
+              const SizedBox(height: 20),
+              SelectableText(
+                result.codeDisplay,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.warning_amber, size: 16, color: AppTheme.accentOrange),
+                  const SizedBox(width: 6),
+                  const Flexible(
+                    child: Text(
+                      'This code will not be shown again after you close this screen.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12.5, color: AppTheme.accentOrange),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => copyToClipboard(ctx, result.code, label: 'Code copied'),
+                      icon: const Icon(Icons.copy),
+                      label: const Text('Copy'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => Share.share(
+                        'Your Awn Care follow-up code: ${result.codeDisplay}',
+                        subject: 'Follow-up code',
+                      ),
+                      icon: const Icon(Icons.ios_share),
+                      label: const Text('Share'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Done')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _revokeFollowUpCode() async {
+    if (_actionInProgress) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revoke Follow-up Code'),
+        content: const Text(
+          'This immediately invalidates the current follow-up code for this patient, if one is active. '
+          'They will need a new code to keep using the follow-up chat.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Revoke')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _actionInProgress = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final revoked = await context.read<SupabaseService>().revokePortalCode(
+            entryCode: auth.entryCode!,
+            encounterId: widget.encounterId,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(revoked ? 'Follow-up code revoked.' : 'No active follow-up code to revoke.')),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1391,6 +1547,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                     PopupMenuItem(
                       value: 'prescription',
                       child: ListTile(dense: true, leading: Icon(Icons.medication_outlined), title: Text('Prescription (Rx)')),
+                    ),
+                  ],
+                ),
+                // متاح لأي زيارة بغض النظر عن مصدرها (طوارئ/راوند/عيادة) أو
+                // حالتها (نشطة/مقفولة) — مفيش نداء بيتأكد إن فيه كود نشط أصلًا
+                // (مفيش RPC لده)، فـ Revoke بيتعرض دايمًا وبيرجع "مفيش حاجة
+                // تتلغي" بأمان لو مفيش كود شغال.
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.qr_code_2),
+                  tooltip: 'Follow-up Code',
+                  onSelected: (v) => v == 'generate' ? _generateFollowUpCode() : _revokeFollowUpCode(),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'generate',
+                      child: ListTile(dense: true, leading: Icon(Icons.qr_code_2), title: Text('Generate Follow-up Code')),
+                    ),
+                    PopupMenuItem(
+                      value: 'revoke',
+                      child: ListTile(dense: true, leading: Icon(Icons.block), title: Text('Revoke Code')),
                     ),
                   ],
                 ),

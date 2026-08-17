@@ -1,4 +1,4 @@
-package com.example.awn_care
+package com.awncare.app
 
 import io.flutter.embedding.android.FlutterActivity
 

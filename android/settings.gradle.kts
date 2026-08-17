@@ -21,6 +21,10 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "9.0.1" apply false
     id("org.jetbrains.kotlin.android") version "2.3.20" apply false
+    // Declared here (apply false) so app/build.gradle.kts can conditionally
+    // `apply(plugin = ...)` it only when a real google-services.json exists —
+    // see the comment there for why this must stay conditional.
+    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 include(":app")

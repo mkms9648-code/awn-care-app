@@ -9,11 +9,16 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({
     required AuthService authService,
     required SupabaseService supabaseService,
+    void Function(String entryCode)? onAuthenticated,
   })  : _authService = authService,
-        _supabaseService = supabaseService;
+        _supabaseService = supabaseService,
+        _onAuthenticated = onAuthenticated;
 
   final AuthService _authService;
   final SupabaseService _supabaseService;
+  // بيتنادى بعد أي دخول ناجح (كود جديد أو استرجاع جلسة محفوظة) — main.dart
+  // بيوصّله بتسجيل FCM token عشان تنبيهات تصعيد البورتال توصل للجهاز ده.
+  final void Function(String entryCode)? _onAuthenticated;
 
   String? _entryCode;
   StaffProfile? _profile;
@@ -35,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
         _entryCode = code;
         final deviceId = await _authService.getOrCreateDeviceId();
         _profile = await _supabaseService.resolveStaff(code, deviceId: deviceId);
+        _onAuthenticated?.call(code);
       }
     } catch (e) {
       _error = describeError(e);
@@ -64,6 +70,7 @@ class AuthProvider extends ChangeNotifier {
       await _authService.saveEntryCode(code);
       _entryCode = code;
       _profile = profile;
+      _onAuthenticated?.call(code);
       return true;
     } catch (e) {
       _error = describeError(e);

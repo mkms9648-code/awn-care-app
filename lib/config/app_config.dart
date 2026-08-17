@@ -62,4 +62,14 @@ class AppConfig {
   static const String rpcNotesHistory = 'app_notes_history';
   static const String rpcMedicationsHistory = 'app_medications_history';
   static const String rpcCorrectEvent = 'app_correct_event';
+
+  /// بوابة المريض (portal) — الكود اللي المريض بيدخل بيه شات المتابعة العام
+  /// بعد الزيارة، وصندوق وارد الحالات اللي الـ AI صعّدها للطبيب.
+  static const String rpcGeneratePortalCode = 'app_generate_portal_code';
+  static const String rpcRevokePortalCode = 'app_revoke_portal_code';
+  static const String rpcPortalInbox = 'app_portal_inbox';
+  static const String rpcPortalThread = 'app_portal_thread';
+  static const String rpcPortalReply = 'app_portal_reply';
+  static const String rpcPortalResolve = 'app_portal_resolve';
+  static const String rpcRegisterPushToken = 'app_register_push_token';
 }

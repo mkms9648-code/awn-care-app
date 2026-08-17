@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "747280747213",
+    "project_id": "awn-care",
+    "storage_bucket": "awn-care.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:747280747213:android:51117db7e46a0244fff784",
+        "android_client_info": {
+          "package_name": "com.awncare.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ7Mcc3zqRXx3KWgYVlDx1irWJ4U0c66o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

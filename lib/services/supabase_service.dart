@@ -5,6 +5,8 @@ import '../models/chat_message.dart';
 import '../models/encounter.dart';
 import '../models/patient_summary.dart';
 import '../models/analytics_summary.dart';
+import '../models/portal_escalation.dart';
+import '../models/portal_message.dart';
 import '../models/staff_profile.dart';
 import '../models/unit_info.dart';
 import 'mock_data_service.dart';
@@ -708,6 +710,155 @@ class SupabaseService {
       },
     );
     return AnalyticsSummary.fromJson(result as Map<String, dynamic>);
+  }
+
+  // ===========================================================================
+  // بوابة المريض (portal) — كود المتابعة العام بعد الزيارة، وصندوق وارد
+  // الحالات اللي الـ AI صعّدها للطبيب (تنبيه محتاج مراجعة بشرية). كل النداءات
+  // دي بتستخدم bot_key='portal' ثابت (مسجّل جنب ed/round/clinic، ومقفول
+  // بميزة patient_portal_module زي باقي التابات).
+  // ===========================================================================
+  static const String _portalBotKey = 'portal';
+
+  /// كود متابعة جديد لزيارة معيّنة — [PortalCodeResult.code] بيترجع نص صريح
+  /// مرة واحدة بس (السيرفر بيخزّن الهاش بس بعد كده)، فلازم يتعرض للطبيب فورًا
+  /// وبعدين يتقفل. متاح لأي زيارة (مش عيادة بس).
+  Future<PortalCodeResult> generatePortalCode({
+    required String entryCode,
+    required String encounterId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) {
+      return const PortalCodeResult(
+        accessCodeId: 'mock',
+        code: '0000-0000-00',
+        codeDisplay: '0000-0000-00',
+        patientName: '',
+      );
+    }
+    final result = await _client.rpc(
+      AppConfig.rpcGeneratePortalCode,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+      },
+    );
+    return PortalCodeResult.fromJson(result as Map<String, dynamic>);
+  }
+
+  /// إبطال كود المتابعة الحالي للزيارة (لو موجود). آمن يتنادى حتى لو مفيش
+  /// كود نشط أصلًا — بيرجع revoked=false من غير ما يفشل.
+  Future<bool> revokePortalCode({
+    required String entryCode,
+    required String encounterId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return false;
+    final result = await _client.rpc(
+      AppConfig.rpcRevokePortalCode,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+      },
+    );
+    final map = result as Map<String, dynamic>;
+    return map['revoked'] == true;
+  }
+
+  /// صندوق وارد التصعيدات — [status] الافتراضي 'open' (الحالات المحتاجة رد
+  /// لسه). القيم التانية: 'replied'/'resolved'.
+  Future<List<PortalEscalation>> portalInbox({
+    required String entryCode,
+    String status = 'open',
+  }) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcPortalInbox,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_status': status,
+      },
+    );
+    final results = (result as Map<String, dynamic>)['results'] as List<dynamic>? ?? [];
+    return results.map((e) => PortalEscalation.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// المحادثة الكاملة (مريض/AI/طبيب) لتصعيد معيّن.
+  Future<List<PortalMessage>> portalThread({
+    required String entryCode,
+    required String encounterId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcPortalThread,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+      },
+    );
+    final messages = (result as Map<String, dynamic>)['messages'] as List<dynamic>? ?? [];
+    return messages.map((e) => PortalMessage.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// رد الطبيب على تصعيد — رسالة نصية بترجع للمريض عن طريق البورتال (مفيش
+  /// أي معالجة AI هنا، مجرد تحويل مباشر).
+  Future<void> portalReply({
+    required String entryCode,
+    required String escalationId,
+    required String body,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcPortalReply,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_escalation_id': escalationId,
+        'p_body': body,
+      },
+    );
+  }
+
+  /// إقفال التصعيد من غير رد مكتوب — الطبيب اتصل بالمريض مباشرة بدل الكتابة.
+  Future<void> portalResolve({
+    required String entryCode,
+    required String escalationId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcPortalResolve,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_escalation_id': escalationId,
+      },
+    );
+  }
+
+  /// تسجيل FCM token بعد الدخول (أو لما يتجدد) — عشان تنبيهات التصعيد توصل
+  /// للجهاز ده.
+  Future<void> registerPushToken({
+    required String entryCode,
+    required String token,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcRegisterPushToken,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_token': token,
+      },
+    );
   }
 
   /// بتشترك في تغييرات كل الجداول اللي بتأثر على البورد — مش encounters بس،

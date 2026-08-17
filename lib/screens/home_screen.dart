@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import '../providers/analytics_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/board_provider.dart';
+import '../providers/portal_inbox_provider.dart';
 import '../services/supabase_service.dart';
 import 'analytics_screen.dart';
 import 'board_screen.dart';
+import 'portal_inbox_screen.dart';
 import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -36,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   BoardProvider? _roundsBoardProvider;
   BoardProvider? _clinicBoardProvider;
   AnalyticsProvider? _analyticsProvider;
+  PortalInboxProvider? _portalInboxProvider;
 
   @override
   void didChangeDependencies() {
@@ -53,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final hasEd = features.contains('ed_module');
       final hasRound = features.contains('round_module');
       final hasClinic = features.contains('clinic_module');
+      final hasPortal = features.contains('patient_portal_module');
 
       if (hasEd || hasRound || hasClinic) {
         _analyticsProvider = AnalyticsProvider(
@@ -91,6 +95,13 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
 
+      if (hasPortal) {
+        _portalInboxProvider = PortalInboxProvider(
+          supabaseService: supabase,
+          entryCode: entryCode,
+        );
+      }
+
       _initialized = true;
     }
   }
@@ -103,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _roundsBoardProvider?.dispose();
     _clinicBoardProvider?.dispose();
     _analyticsProvider?.dispose();
+    _portalInboxProvider?.dispose();
     super.dispose();
   }
 
@@ -145,6 +157,13 @@ class _HomeScreenState extends State<HomeScreen> {
             provider: _clinicBoardProvider!,
             botKey: 'clinic',
           ),
+        ),
+      if (_portalInboxProvider != null)
+        _NavTab(
+          icon: Icons.support_agent_outlined,
+          selectedIcon: Icons.support_agent,
+          label: 'المساعد',
+          screen: PortalInboxScreen(provider: _portalInboxProvider!),
         ),
       if (_analyticsProvider != null)
         _NavTab(
