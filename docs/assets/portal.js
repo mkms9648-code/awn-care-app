@@ -284,21 +284,27 @@ async function submitCode(rawCode) {
   setGateError("");
   setGateLoading(true);
 
-  const result = await verifyCode(code);
+  try {
+    const result = await verifyCode(code);
 
-  setGateLoading(false);
+    if (result.rateLimited) {
+      setGateError("محاولات كتير في وقت قصير — استنى شوية وجرب تاني.");
+      return;
+    }
 
-  if (result.rateLimited) {
-    setGateError("محاولات كتير في وقت قصير — استنى شوية وجرب تاني.");
-    return;
+    if (!result.valid) {
+      setGateError("الكود مش صحيح. تأكد إنك كتبته زي ما هو مكتوب بالظبط.");
+      return;
+    }
+
+    enterChat(code, result.patient_first_name);
+  } catch (err) {
+    // أي خطأ غير متوقع (شبكة/تحميل) — لازم يبان بدل ما الزرار يفضل معلّق
+    // على "جاري التحقق" للأبد من غير أي رد فعل ظاهر للمريض.
+    setGateError("حصل خطأ غير متوقع، جرب تاني كمان شوية. (" + (err && err.message ? err.message : String(err)) + ")");
+  } finally {
+    setGateLoading(false);
   }
-
-  if (!result.valid) {
-    setGateError("الكود مش صحيح. تأكد إنك كتبته زي ما هو مكتوب بالظبط.");
-    return;
-  }
-
-  enterChat(code, result.patient_first_name);
 }
 
 codeInput.addEventListener("input", () => {
@@ -370,4 +376,8 @@ function init() {
   showGate();
 }
 
-init();
+try {
+  init();
+} catch (err) {
+  setGateError("حصل خطأ أثناء تحميل الصفحة، جرب تحدّث الصفحة. (" + (err && err.message ? err.message : String(err)) + ")");
+}
