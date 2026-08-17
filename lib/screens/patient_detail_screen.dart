@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../config/app_config.dart';
 import '../models/chat_message.dart';
 import '../models/patient_summary.dart';
 import '../models/portal_escalation.dart';
@@ -539,7 +540,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: QrImageView(data: result.code, size: 180, backgroundColor: Colors.white),
+                child: QrImageView(
+                  data: '${AppConfig.portalBaseUrl}?code=${result.code}',
+                  size: 180,
+                  backgroundColor: Colors.white,
+                ),
               ),
               const SizedBox(height: 20),
               SelectableText(
@@ -576,7 +581,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: () => Share.share(
-                        'Your Awn Care follow-up code: ${result.codeDisplay}',
+                        'Your Awn Care follow-up code: ${result.codeDisplay}\n'
+                        '${AppConfig.portalBaseUrl}?code=${result.code}',
                         subject: 'Follow-up code',
                       ),
                       icon: const Icon(Icons.ios_share),

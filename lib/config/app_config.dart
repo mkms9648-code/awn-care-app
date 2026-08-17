@@ -42,6 +42,13 @@ class AppConfig {
     defaultValue: 'https://n8n-c1bz.srv1841520.hstgr.cloud/webhook/translate-mobile',
   );
 
+  /// صفحة شات بوابة المريض العامة (GitHub Pages) — بيتحط الكود بعدها كـ
+  /// query param (?code=...) عشان الـ QR يودّي المريض للشات مباشرة.
+  static const String portalBaseUrl = String.fromEnvironment(
+    'PORTAL_BASE_URL',
+    defaultValue: 'https://mkms9648-code.github.io/awn-care-app/',
+  );
+
   static const String attachmentsBucket = 'attachments';
 
   /// RPC function names — must match existing Postgres functions exactly.
