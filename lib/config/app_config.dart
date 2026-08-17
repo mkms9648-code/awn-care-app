@@ -35,6 +35,13 @@ class AppConfig {
     defaultValue: 'https://n8n-c1bz.srv1841520.hstgr.cloud/webhook/clinic-mobile',
   );
 
+  /// نص عربي حقيقي (مش قاموس ثابت) للتعليمات وسطر جرعة/طريقة الدواء في
+  /// الروشتة — stateless، مفيش أدوات ولا وصول لبيانات مريض في الـ workflow ده.
+  static const String translateWebhookUrl = String.fromEnvironment(
+    'TRANSLATE_WEBHOOK_URL',
+    defaultValue: 'https://n8n-c1bz.srv1841520.hstgr.cloud/webhook/translate-mobile',
+  );
+
   static const String attachmentsBucket = 'attachments';
 
   /// RPC function names — must match existing Postgres functions exactly.

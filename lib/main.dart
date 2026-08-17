@@ -9,6 +9,7 @@ import 'screens/app_shell.dart';
 import 'services/auth_service.dart';
 import 'services/chat_service.dart';
 import 'services/supabase_service.dart';
+import 'services/translation_service.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -46,6 +47,7 @@ class AwnCareApp extends StatelessWidget {
             client: AppConfig.useMockData ? null : Supabase.instance.client,
           ),
         ),
+        Provider(create: (_) => TranslationService()),
         // على مستوى الـ MaterialApp كله (فوق الـ Navigator) عشان يفضل متاح
         // لأي شاشة اتحطّت بـ Navigator.push (زي PatientDetailScreen) — مش
         // بس للشاشات جوه الـ IndexedStack الرئيسي.

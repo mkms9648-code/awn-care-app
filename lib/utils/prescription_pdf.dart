@@ -9,19 +9,18 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 
 import '../models/patient_summary.dart';
-import 'medical_ar_translate.dart';
 import 'ticket_utils.dart';
 
 /// روشتة (Rx) منفصلة عن التقرير العام — تصميم مخصص لصفحة دوا فعلية بدل
 /// سطور نص عادية: هيدر لوجو مركزي صغير، بيانات مريض في بوكس، تحذير حساسية
 /// بارز لو موجود، وقائمة أدوية مرقّمة بخط واضح.
 ///
-/// [PrescriptionLanguage.arabic]: العناوين الثابتة والجرعة/طريقة الاستخدام
-/// بتتحول عربي (قاموس مصطلحات معروف، مش ترجمة آلية حرة — آمن). **اسم الدواء
-/// نفسه يفضل انجليزي دايمًا** (نفس الاسم على العلبة، تجنبًا لأي لبس في
-/// الصيدلية). التعليمات (Instructions) بتتعرض زي ما هي من غير أي ترجمة —
-/// لو الطبيب كتبها عربي أصلًا (مسموح، مفيش قيد على لغة الحقل ده) هتظهر عربي
-/// صح؛ ترجمة نص حر بقاموس مش آمنة لحاجة طبية فبنتجنبها عمدًا.
+/// [PrescriptionLanguage.arabic]: **بس** سطر جرعة/طريقة/تكرار كل دواء
+/// والتعليمات بيتحولوا عربي (نص حقيقي مترجم عن طريق [TranslationService]،
+/// مبعوت جاهز هنا في [translatedDoseLines]/[translatedInstructions] —
+/// الملف ده مش بيترجم حاجة بنفسه). أي حاجة تانية (اسم الدواء، بيانات
+/// المريض، العناوين الثابتة) بتفضل انجليزي زي ما هي في الحالتين — قرار
+/// صريح من صاحب المنتج.
 enum PrescriptionLanguage { english, arabic }
 
 const _brandBlue = PdfColor.fromInt(0xFF3B6FF2);
@@ -44,74 +43,6 @@ Future<void> _ensureAssets() async {
 final _dateFmt = DateFormat('dd MMM yyyy');
 final _dateTimeFmt = DateFormat('dd MMM yyyy, hh:mm a');
 
-class _Strings {
-  const _Strings({
-    required this.prescription,
-    required this.patient,
-    required this.mrn,
-    required this.ticket,
-    required this.ageSex,
-    required this.unit,
-    required this.attending,
-    required this.male,
-    required this.female,
-    required this.allergies,
-    required this.instructions,
-    required this.signature,
-    required this.footer,
-  });
-
-  final String prescription;
-  final String patient;
-  final String mrn;
-  final String ticket;
-  final String ageSex;
-  final String unit;
-  final String attending;
-  final String male;
-  final String female;
-  final String allergies;
-  final String instructions;
-  final String signature;
-  final String Function(String dateTime) footer;
-
-  static const en = _Strings(
-    prescription: 'Prescription',
-    patient: 'Patient',
-    mrn: 'MRN',
-    ticket: 'Ticket',
-    ageSex: 'Age / Sex',
-    unit: 'Unit',
-    attending: 'Attending',
-    male: 'Male',
-    female: 'Female',
-    allergies: 'ALLERGIES',
-    instructions: 'Instructions',
-    signature: 'Physician signature',
-    footer: _footerEn,
-  );
-
-  static const ar = _Strings(
-    prescription: 'روشتة',
-    patient: 'المريض',
-    mrn: 'رقم الملف',
-    ticket: 'تذكرة',
-    ageSex: 'السن / النوع',
-    unit: 'القسم',
-    attending: 'الطبيب المعالج',
-    male: 'ذكر',
-    female: 'أنثى',
-    allergies: 'حساسية',
-    instructions: 'تعليمات',
-    signature: 'توقيع الطبيب',
-    footer: _footerAr,
-  );
-
-  static String _footerEn(String dt) =>
-      'Generated via Awn Care on $dt — reflects the physician\'s documented active medications.';
-  static String _footerAr(String dt) => 'تم الإصدار عن طريق Awn Care بتاريخ $dt — طبقًا للأدوية النشطة المسجّلة.';
-}
-
 pw.Widget _brandMark() {
   return pw.Column(
     children: [
@@ -125,54 +56,86 @@ pw.Widget _brandMark() {
   );
 }
 
-pw.Widget _infoRow(String label, String value, bool rtl) {
-  final labelWidget = pw.SizedBox(
-    width: 62,
-    child: pw.Text(label, style: pw.TextStyle(font: _regular, fontSize: 8.5, color: PdfColors.grey600)),
-  );
-  final valueWidget = pw.Expanded(
-    child: pw.Text(value, style: pw.TextStyle(font: _bold, fontSize: 10, color: _brandBlueDeep)),
-  );
+pw.Widget _infoRow(String label, String value) {
   return pw.Padding(
     padding: const pw.EdgeInsets.only(bottom: 5),
     child: pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: rtl ? [valueWidget, pw.SizedBox(width: 8), labelWidget] : [labelWidget, valueWidget],
+      children: [
+        pw.SizedBox(
+          width: 62,
+          child: pw.Text(label, style: pw.TextStyle(font: _regular, fontSize: 8.5, color: PdfColors.grey600)),
+        ),
+        pw.Expanded(
+          child: pw.Text(value, style: pw.TextStyle(font: _bold, fontSize: 10, color: _brandBlueDeep)),
+        ),
+      ],
     ),
   );
 }
 
+/// النص العربي المفرد ده بيتلف RTL لوحده جوه سياق الصفحة العادي (LTR) —
+/// الصفحة نفسها بتفضل بنفس شكلها الانجليزي بالظبط.
+pw.Widget _maybeRtl(String text, pw.TextStyle style, {bool rtl = false}) {
+  final child = pw.Text(text, style: style);
+  return rtl ? pw.Directionality(textDirection: pw.TextDirection.rtl, child: child) : child;
+}
+
 /// بيبني PDF روشتة لقائمة أدوية فعالة — مفيش استدعاء ليها لو القائمة فاضية،
-/// الكارتر (patient_detail_screen) بيتأكد من كده الأول. [instructions]
-/// اختياري — تعليمات المريض (kind='health_education') بتتحط تحت الأدوية لو
-/// موجودة، عشان تبقى جزء من نفس الورقة اللي المريض هياخدها معاه.
+/// الكارتر (patient_detail_screen) بيتأكد من كده الأول.
+///
+/// [instructions]: تعليمات المريض (kind='health_education')، بتتحط تحت
+/// الأدوية لو موجودة.
+/// [translatedDoseLines] / [translatedInstructions]: النسخة العربية
+/// الجاهزة (لو [language] == arabic) — بنفس ترتيب [summary.activeMedications]
+/// و [instructions] بالظبط. لو null أو أقصر من المتوقع، السطر المقابل
+/// بيرجع للانجليزي الأصلي بدل ما يتمسح.
 Future<Uint8List> buildPrescriptionPdf(
   PatientSummary summary, {
   List<NoteHistoryEntry> instructions = const [],
   PrescriptionLanguage language = PrescriptionLanguage.english,
+  List<String>? translatedDoseLines,
+  List<String>? translatedInstructions,
 }) async {
   await _ensureAssets();
   final doc = pw.Document();
   final theme = pw.ThemeData.withFont(base: _regular!, bold: _bold!);
   final ar = language == PrescriptionLanguage.arabic;
-  final t = ar ? _Strings.ar : _Strings.en;
-  final textDirection = ar ? pw.TextDirection.rtl : pw.TextDirection.ltr;
-  final crossStart = ar ? pw.CrossAxisAlignment.end : pw.CrossAxisAlignment.start;
 
   final p = summary.patient;
   final e = summary.encounter;
   final meds = summary.activeMedications;
   final ticket = e.handle != null ? cleanTicket(e.handle!) : null;
   final ageLine = p.birthYear != null ? '${DateTime.now().year - p.birthYear!} yrs' : '—';
-  final sexLine = p.sex == 'm' ? t.male : (p.sex == 'f' ? t.female : '—');
+  final sexLine = p.sex == 'm' ? 'Male' : (p.sex == 'f' ? 'Female' : '—');
   final now = DateTime.now();
+
+  String doseLine(int i) {
+    final original = [meds[i].dose, meds[i].route, meds[i].frequency]
+        .whereType<String>()
+        .where((s) => s.isNotEmpty)
+        .join('  ·  ');
+    if (ar && translatedDoseLines != null && i < translatedDoseLines.length && translatedDoseLines[i].isNotEmpty) {
+      return translatedDoseLines[i];
+    }
+    return original;
+  }
+
+  String instructionText(int i) {
+    if (ar &&
+        translatedInstructions != null &&
+        i < translatedInstructions.length &&
+        translatedInstructions[i].isNotEmpty) {
+      return translatedInstructions[i];
+    }
+    return instructions[i].body;
+  }
 
   doc.addPage(
     pw.MultiPage(
       theme: theme,
       pageFormat: PdfPageFormat.a4,
       margin: const pw.EdgeInsets.fromLTRB(34, 30, 34, 26),
-      textDirection: textDirection,
       build: (ctx) => [
           // ===== Header: small centered brand mark =====
           pw.Center(child: _brandMark()),
@@ -188,7 +151,7 @@ Future<Uint8List> buildPrescriptionPdf(
               pw.SizedBox(width: 8),
               pw.Expanded(
                 child: pw.Text(
-                  t.prescription,
+                  'Prescription',
                   style: pw.TextStyle(font: _bold, fontSize: 19, color: _brandBlueDeep),
                 ),
               ),
@@ -200,7 +163,7 @@ Future<Uint8List> buildPrescriptionPdf(
           ),
           pw.SizedBox(height: 18),
 
-          // ===== Patient info box =====
+          // ===== Patient info box — يفضل انجليزي دايمًا في الحالتين =====
           pw.Container(
             padding: const pw.EdgeInsets.all(14),
             decoration: pw.BoxDecoration(
@@ -212,22 +175,22 @@ Future<Uint8List> buildPrescriptionPdf(
               children: [
                 pw.Expanded(
                   child: pw.Column(
-                    crossAxisAlignment: crossStart,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _infoRow(t.patient, p.name, ar),
-                      _infoRow(t.mrn, p.mrn, ar),
-                      if (ticket != null) _infoRow(t.ticket, '#$ticket', ar),
+                      _infoRow('Patient', p.name),
+                      _infoRow('MRN', p.mrn),
+                      if (ticket != null) _infoRow('Ticket', '#$ticket'),
                     ],
                   ),
                 ),
                 pw.SizedBox(width: 18),
                 pw.Expanded(
                   child: pw.Column(
-                    crossAxisAlignment: crossStart,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _infoRow(t.ageSex, '$ageLine · $sexLine', ar),
-                      if (e.unit != null) _infoRow(t.unit, e.unit!, ar),
-                      if (e.attending != null) _infoRow(t.attending, 'Dr. ${e.attending}', ar),
+                      _infoRow('Age / Sex', '$ageLine · $sexLine'),
+                      if (e.unit != null) _infoRow('Unit', e.unit!),
+                      if (e.attending != null) _infoRow('Attending', 'Dr. ${e.attending}'),
                     ],
                   ),
                 ),
@@ -247,7 +210,7 @@ Future<Uint8List> buildPrescriptionPdf(
                 borderRadius: pw.BorderRadius.circular(6),
               ),
               child: pw.Text(
-                '${t.allergies}: ${p.allergies.join(', ')}',
+                'ALLERGIES: ${p.allergies.join(', ')}',
                 style: pw.TextStyle(font: _bold, fontSize: 9.5, color: PdfColors.red900),
               ),
             ),
@@ -255,9 +218,8 @@ Future<Uint8List> buildPrescriptionPdf(
 
           pw.SizedBox(height: 22),
 
-          // ===== Rx list =====
-          // اسم الدواء نفسه يفضل انجليزي دايمًا (عمدًا، حتى في النسخة
-          // العربية) — الجرعة/الطريقة/التكرار بس هما اللي بيتترجموا لو عربي.
+          // ===== Rx list — اسم الدواء يفضل انجليزي دايمًا، سطر الجرعة/
+          // الطريقة/التكرار بس هو اللي بيتحول عربي لو مطلوب =====
           for (var i = 0; i < meds.length; i++) ...[
             pw.Container(
               padding: const pw.EdgeInsets.symmetric(vertical: 10),
@@ -282,28 +244,16 @@ Future<Uint8List> buildPrescriptionPdf(
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Directionality(
-                          textDirection: pw.TextDirection.ltr,
-                          child: pw.Text(
-                            meds[i].name,
-                            style: pw.TextStyle(font: _bold, fontSize: 12.5, color: _brandBlueDeep),
-                          ),
+                        pw.Text(
+                          meds[i].name,
+                          style: pw.TextStyle(font: _bold, fontSize: 12.5, color: _brandBlueDeep),
                         ),
-                        if ([meds[i].dose, meds[i].route, meds[i].frequency]
-                            .whereType<String>()
-                            .where((s) => s.isNotEmpty)
-                            .isNotEmpty) ...[
+                        if (doseLine(i).isNotEmpty) ...[
                           pw.SizedBox(height: 2),
-                          pw.Text(
-                            [
-                              if (meds[i].dose != null && meds[i].dose!.isNotEmpty)
-                                ar ? translateDose(meds[i].dose!) : meds[i].dose!,
-                              if (meds[i].route != null && meds[i].route!.isNotEmpty)
-                                ar ? translateRoute(meds[i].route!) : meds[i].route!,
-                              if (meds[i].frequency != null && meds[i].frequency!.isNotEmpty)
-                                ar ? translateFrequency(meds[i].frequency!) : meds[i].frequency!,
-                            ].join('  ·  '),
-                            style: pw.TextStyle(font: _regular, fontSize: 10, color: PdfColors.grey700),
+                          _maybeRtl(
+                            doseLine(i),
+                            pw.TextStyle(font: _regular, fontSize: 10, color: PdfColors.grey700),
+                            rtl: ar,
                           ),
                         ],
                       ],
@@ -314,13 +264,11 @@ Future<Uint8List> buildPrescriptionPdf(
             ),
           ],
 
-          // ===== Patient instructions =====
-          // النص زي ما هو من غير أي ترجمة — لو الطبيب كتبه عربي أصلًا هيظهر
-          // صح، وترجمة نص حر بقاموس مش آمنة لحاجة طبية.
+          // ===== Patient instructions — دي اللي بتتحول عربي فعليًا =====
           if (instructions.isNotEmpty) ...[
             pw.SizedBox(height: 20),
             pw.Text(
-              t.instructions,
+              'Instructions',
               style: pw.TextStyle(font: _bold, fontSize: 12.5, color: _brandBlueDeep),
             ),
             pw.SizedBox(height: 8),
@@ -334,7 +282,7 @@ Future<Uint8List> buildPrescriptionPdf(
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  for (final note in instructions)
+                  for (var i = 0; i < instructions.length; i++)
                     pw.Padding(
                       padding: const pw.EdgeInsets.only(bottom: 4),
                       child: pw.Row(
@@ -342,7 +290,11 @@ Future<Uint8List> buildPrescriptionPdf(
                         children: [
                           pw.Text('•  ', style: pw.TextStyle(font: _bold, fontSize: 10, color: _brandBlue)),
                           pw.Expanded(
-                            child: pw.Text(note.body, style: pw.TextStyle(font: _regular, fontSize: 10)),
+                            child: _maybeRtl(
+                              instructionText(i),
+                              pw.TextStyle(font: _regular, fontSize: 10),
+                              rtl: ar,
+                            ),
                           ),
                         ],
                       ),
@@ -363,7 +315,7 @@ Future<Uint8List> buildPrescriptionPdf(
                   pw.Container(width: 160, height: 0.8, color: PdfColors.grey500),
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    e.attending != null ? 'Dr. ${e.attending}' : t.signature,
+                    e.attending != null ? 'Dr. ${e.attending}' : 'Physician signature',
                     style: pw.TextStyle(font: _bold, fontSize: 9.5, color: _brandBlueDeep),
                   ),
                 ],
@@ -375,7 +327,7 @@ Future<Uint8List> buildPrescriptionPdf(
         children: [
           pw.SizedBox(height: 6),
           pw.Text(
-            t.footer(_dateTimeFmt.format(now)),
+            'Generated via Awn Care on ${_dateTimeFmt.format(now)} — reflects the physician\'s documented active medications.',
             style: pw.TextStyle(font: _regular, fontSize: 7, color: PdfColors.grey500),
             textAlign: pw.TextAlign.center,
           ),
@@ -391,8 +343,16 @@ Future<void> sharePrescriptionPdf(
   PatientSummary summary, {
   List<NoteHistoryEntry> instructions = const [],
   PrescriptionLanguage language = PrescriptionLanguage.english,
+  List<String>? translatedDoseLines,
+  List<String>? translatedInstructions,
 }) async {
-  final bytes = await buildPrescriptionPdf(summary, instructions: instructions, language: language);
+  final bytes = await buildPrescriptionPdf(
+    summary,
+    instructions: instructions,
+    language: language,
+    translatedDoseLines: translatedDoseLines,
+    translatedInstructions: translatedInstructions,
+  );
   final dir = await getTemporaryDirectory();
   final safeName = summary.patient.name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '-');
   final file = File('${dir.path}/awn-care-rx-$safeName.pdf');

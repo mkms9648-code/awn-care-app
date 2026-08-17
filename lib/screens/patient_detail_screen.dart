@@ -14,6 +14,7 @@ import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../services/chat_service.dart';
 import '../services/supabase_service.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/clipboard_utils.dart';
 import '../utils/error_utils.dart';
@@ -596,9 +597,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       return;
     }
 
-    // انجليزي زي ما هو دايمًا؛ عربي بيترجم الجرعة/الطريقة/التكرار بس (قاموس
-    // مصطلحات معروف، آمن) — اسم الدواء يفضل انجليزي في الحالتين، والتعليمات
-    // بتتعرض زي ما اتكتبت بالظبط (ممكن الطبيب يكون كتبها عربي أصلًا).
+    // انجليزي زي ما هو دايمًا. عربي: بس سطر جرعة/طريقة/تكرار كل دواء
+    // والتعليمات بيتترجموا (ترجمة حقيقية عن طريق TranslationService، مش
+    // قاموس) — اسم الدواء وبيانات المريض والعناوين تفضل انجليزي في الحالتين.
     final language = await showDialog<PrescriptionLanguage>(
       context: context,
       builder: (ctx) => SimpleDialog(
@@ -617,6 +618,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     );
     if (language == null || !mounted) return;
 
+    setState(() => _actionInProgress = true);
     try {
       final auth = context.read<AuthProvider>();
       // التعليمات (kind='health_education') بتتحط تحت الأدوية في نفس الورقة —
@@ -628,13 +630,52 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             encounterId: widget.encounterId,
             kind: 'health_education',
           );
-      await sharePrescriptionPdf(_summary!, instructions: instructions, language: language);
+
+      List<String>? translatedDoseLines;
+      List<String>? translatedInstructions;
+      var translationFailed = false;
+
+      if (language == PrescriptionLanguage.arabic) {
+        final translator = context.read<TranslationService>();
+        final meds = _summary!.activeMedications;
+        final doseSources = [
+          for (final m in meds) [m.dose, m.route, m.frequency].whereType<String>().where((s) => s.isNotEmpty).join(', '),
+        ];
+
+        final results = await Future.wait([
+          ...doseSources.map((s) => s.isEmpty ? Future.value(const TranslationResult(text: '', ok: true)) : translator.translateToArabic(s)),
+          ...instructions.map((n) => translator.translateToArabic(n.body)),
+        ]);
+
+        translatedDoseLines = results.sublist(0, doseSources.length).map((r) => r.text).toList();
+        translatedInstructions = results.sublist(doseSources.length).map((r) => r.text).toList();
+        translationFailed = results.any((r) => !r.ok);
+      }
+
+      await sharePrescriptionPdf(
+        _summary!,
+        instructions: instructions,
+        language: language,
+        translatedDoseLines: translatedDoseLines,
+        translatedInstructions: translatedInstructions,
+      );
+
+      if (translationFailed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Some text could not be translated and was kept in English.'),
+            backgroundColor: AppTheme.accentOrange,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
         );
       }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
     }
   }
 
