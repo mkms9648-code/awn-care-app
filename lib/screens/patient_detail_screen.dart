@@ -818,14 +818,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       // بيرجع نفس الكود لو موجود بالفعل بدل ما يلغيه. لو الطلب فشل لأي سبب،
       // الروشتة لسه بتتصدّر عادي من غير QR بدل ما توقف التصدير كله.
       String? portalCode;
+      String? portalCodeError;
       try {
         final codeResult = await context.read<SupabaseService>().getOrCreatePortalCode(
               entryCode: auth.entryCode!,
               encounterId: widget.encounterId,
             );
         portalCode = codeResult.code.isNotEmpty ? codeResult.code : null;
-      } catch (_) {
+      } catch (e) {
         portalCode = null;
+        portalCodeError = describeError(e);
       }
 
       await sharePrescriptionPdf(
@@ -841,6 +843,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Some text could not be translated and was kept in English.'),
+            backgroundColor: AppTheme.accentOrange,
+          ),
+        );
+      }
+      if (portalCodeError != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Follow-up QR could not be added: $portalCodeError'),
             backgroundColor: AppTheme.accentOrange,
           ),
         );
