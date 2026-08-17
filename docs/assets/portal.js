@@ -1,10 +1,14 @@
 // ============================================================================
-// بوابة متابعة المريض — عميل Supabase مباشر (للـ RPC اللي مسموحة لـ anon) +
-// نداء webhook n8n للإرسال، زائد التبديل بين شاشة الكود وشاشة الشات.
-// محمّل كـ ES module من index.html — <script type="module" src="assets/portal.js">
-// بيستخدم Supabase JS من CDN (esm.sh) عشان محتاجينش أي خطوة build.
+// بوابة متابعة المريض — نداءات مباشرة (fetch خام) لـ PostgREST RPC اللي
+// مسموحة لـ anon + نداء webhook n8n للإرسال، زائد التبديل بين شاشة الكود
+// وشاشة الشات. محمّل كـ ES module من index.html.
+//
+// عمدًا **مش بنستخدم مكتبة @supabase/supabase-js** — كانت بتتحمّل من esm.sh
+// (CDN خارجي)، وده احتمال فشل إضافي (تحميل المكتبة نفسها، تهيئتها، أي فرق
+// في السلوك بين نسخها) مش لازم أصلاً لثلاث نداءات REST بسيطة. fetch مباشر
+// لنفس الـ endpoint اللي بيشتغل مضبوط لما بيتعمله اختبار مباشر (curl) —
+// أقل اعتمادية ممكنة، وأسهل تشخيص لو فشل حاجة.
 // ============================================================================
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cfg = window.APP_CONFIG || {};
 
@@ -16,7 +20,33 @@ if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes("YOUR-PROJECT")) {
   throw new Error("APP_CONFIG not set — edit config.js first.");
 }
 
-const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+// نداء RPC مباشر عن طريق PostgREST — بنفس الشكل اللي مؤكد شغال (curl) بالظبط:
+// POST /rest/v1/rpc/<fn> مع apikey + Authorization + body JSON بالباراميترات.
+async function postgrestRpc(fnName, params) {
+  const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: cfg.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify(params),
+  });
+
+  let body = null;
+  try {
+    body = await res.json();
+  } catch (_) {
+    body = null;
+  }
+
+  if (!res.ok) {
+    const message = (body && (body.message || body.hint)) || `HTTP ${res.status}`;
+    return { data: null, error: { message } };
+  }
+
+  return { data: body, error: null };
+}
 
 const POLL_INTERVAL_MS = 5000;
 const CODE_STORAGE_KEY = "awn_portal_code";
@@ -80,7 +110,7 @@ export async function verifyCode(code) {
   let result;
   try {
     result = await withTimeout(
-      supabase.rpc("app_portal_verify_code", { p_access_code: code })
+      postgrestRpc("app_portal_verify_code", { p_access_code: code })
     );
   } catch (err) {
     if (err && err.message === "timeout") {
@@ -110,7 +140,7 @@ export async function verifyCode(code) {
 export async function fetchThread(code) {
   try {
     const { data, error } = await withTimeout(
-      supabase.rpc("app_portal_thread_patient", { p_access_code: code })
+      postgrestRpc("app_portal_thread_patient", { p_access_code: code })
     );
     if (error) return null;
     return data;
