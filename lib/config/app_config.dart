@@ -73,6 +73,7 @@ class AppConfig {
   /// بوابة المريض (portal) — الكود اللي المريض بيدخل بيه شات المتابعة العام
   /// بعد الزيارة، وصندوق وارد الحالات اللي الـ AI صعّدها للطبيب.
   static const String rpcGeneratePortalCode = 'app_generate_portal_code';
+  static const String rpcGetOrCreatePortalCode = 'app_get_or_create_portal_code';
   static const String rpcRevokePortalCode = 'app_revoke_portal_code';
   static const String rpcPortalInbox = 'app_portal_inbox';
   static const String rpcPortalThread = 'app_portal_thread';

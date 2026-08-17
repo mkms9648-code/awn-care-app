@@ -8,6 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 
+import '../config/app_config.dart';
 import '../models/patient_summary.dart';
 import 'ticket_utils.dart';
 
@@ -96,6 +97,7 @@ Future<Uint8List> buildPrescriptionPdf(
   PrescriptionLanguage language = PrescriptionLanguage.english,
   List<String>? translatedDoseLines,
   List<String>? translatedInstructions,
+  String? portalCode,
 }) async {
   await _ensureAssets();
   final doc = pw.Document();
@@ -304,11 +306,47 @@ Future<Uint8List> buildPrescriptionPdf(
             ),
           ],
 
-          // ===== Signature =====
+          // ===== Signature (+ follow-up QR if a portal code was issued) =====
           pw.SizedBox(height: 40),
           pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.end,
+            mainAxisAlignment:
+                portalCode != null ? pw.MainAxisAlignment.spaceBetween : pw.MainAxisAlignment.end,
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
+              if (portalCode != null)
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Container(
+                      width: 52,
+                      height: 52,
+                      padding: const pw.EdgeInsets.all(3),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400, width: 0.6),
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                      child: pw.BarcodeWidget(
+                        barcode: pw.Barcode.qrCode(),
+                        data: '${AppConfig.portalBaseUrl}?code=$portalCode',
+                        drawText: false,
+                      ),
+                    ),
+                    pw.SizedBox(width: 8),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'Follow-up question?',
+                          style: pw.TextStyle(font: _bold, fontSize: 8, color: _brandBlueDeep),
+                        ),
+                        pw.Text(
+                          'Scan this code to reach\nyour care team.',
+                          style: pw.TextStyle(font: _regular, fontSize: 7, color: PdfColors.grey600),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
@@ -345,6 +383,7 @@ Future<void> sharePrescriptionPdf(
   PrescriptionLanguage language = PrescriptionLanguage.english,
   List<String>? translatedDoseLines,
   List<String>? translatedInstructions,
+  String? portalCode,
 }) async {
   final bytes = await buildPrescriptionPdf(
     summary,
@@ -352,6 +391,7 @@ Future<void> sharePrescriptionPdf(
     language: language,
     translatedDoseLines: translatedDoseLines,
     translatedInstructions: translatedInstructions,
+    portalCode: portalCode,
   );
   final dir = await getTemporaryDirectory();
   final safeName = summary.patient.name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '-');

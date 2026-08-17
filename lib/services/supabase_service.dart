@@ -747,6 +747,33 @@ class SupabaseService {
     return PortalCodeResult.fromJson(result as Map<String, dynamic>);
   }
 
+  /// زي [generatePortalCode] لكن idempotent — لو فيه كود نشط بالفعل للزيارة
+  /// بيرجعه زي ما هو (من غير إلغاء/توليد جديد). ده اللي تصدير الروشتة PDF
+  /// بيستخدمه، عشان كل تصدير/إعادة طباعة ميلغيش كود اتدّى للمريض بالفعل.
+  Future<PortalCodeResult> getOrCreatePortalCode({
+    required String entryCode,
+    required String encounterId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) {
+      return const PortalCodeResult(
+        accessCodeId: 'mock',
+        code: '0000-0000-00',
+        codeDisplay: '0000-0000-00',
+        patientName: '',
+      );
+    }
+    final result = await _client.rpc(
+      AppConfig.rpcGetOrCreatePortalCode,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+      },
+    );
+    return PortalCodeResult.fromJson(result as Map<String, dynamic>);
+  }
+
   /// إبطال كود المتابعة الحالي للزيارة (لو موجود). آمن يتنادى حتى لو مفيش
   /// كود نشط أصلًا — بيرجع revoked=false من غير ما يفشل.
   Future<bool> revokePortalCode({

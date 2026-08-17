@@ -814,12 +814,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         translationFailed = results.any((r) => !r.ok);
       }
 
+      // كود متابعة المريض بيتحط في الروشتة أوتوماتيك — استدعاء idempotent،
+      // بيرجع نفس الكود لو موجود بالفعل بدل ما يلغيه. لو الطلب فشل لأي سبب،
+      // الروشتة لسه بتتصدّر عادي من غير QR بدل ما توقف التصدير كله.
+      String? portalCode;
+      try {
+        final codeResult = await context.read<SupabaseService>().getOrCreatePortalCode(
+              entryCode: auth.entryCode!,
+              encounterId: widget.encounterId,
+            );
+        portalCode = codeResult.code.isNotEmpty ? codeResult.code : null;
+      } catch (_) {
+        portalCode = null;
+      }
+
       await sharePrescriptionPdf(
         _summary!,
         instructions: instructions,
         language: language,
         translatedDoseLines: translatedDoseLines,
         translatedInstructions: translatedInstructions,
+        portalCode: portalCode,
       );
 
       if (translationFailed && mounted) {
