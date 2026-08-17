@@ -57,54 +57,93 @@ class _BoardContentState extends State<_BoardContent> {
     super.dispose();
   }
 
-  /// المريض بيتسجّل باسمه وتذكرته بس — كل حاجة تانية فاضية في الكارت وتتضاف
-  /// بعدين من جوّه. مفيش كارت مراجعة هنا: الطبيب هو نفسه اللي كاتب القيمتين
-  /// يدويًا، فمفيش تفسير AI ممكن يغلط فيه.
+  /// المريض بيتسجّل باسمه وتذكرته بس (وقسمه لو التاب ده الراوند) — كل حاجة
+  /// تانية فاضية في الكارت وتتضاف بعدين من جوّه. مفيش كارت مراجعة هنا: الطبيب
+  /// هو نفسه اللي كاتب القيم يدويًا، فمفيش تفسير AI ممكن يغلط فيه.
   Future<void> _showAddPatientDialog(BoardProvider board) async {
+    final isRound = widget.botKey == 'round';
+
+    // القسم معلومة أساسية للراوند بالذات — بنجيب قائمة الأقسام الحقيقية
+    // بتاعة المستشفى قبل ما نفتح الفورم، عشان تبقى جاهزة كـ dropdown.
+    List<UnitInfo> units = const [];
+    if (isRound) {
+      try {
+        final auth = context.read<AuthProvider>();
+        final supabase = context.read<SupabaseService>();
+        units = await supabase.listUnits(entryCode: auth.entryCode!, botKey: widget.botKey);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(describeError(e)), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      if (!mounted) return;
+    }
+
     final nameController = TextEditingController();
     final ticketController = TextEditingController();
+    UnitInfo? selectedUnit;
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('New Patient'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: ticketController,
-              decoration: const InputDecoration(labelText: 'Ticket number'),
-              keyboardType: TextInputType.number,
-            ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('New Patient'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: ticketController,
+                decoration: const InputDecoration(labelText: 'Ticket number'),
+                keyboardType: TextInputType.number,
+              ),
+              if (isRound) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<UnitInfo>(
+                  initialValue: selectedUnit,
+                  decoration: const InputDecoration(labelText: 'Department'),
+                  items: units
+                      .map((u) => DropdownMenuItem(value: u, child: Text(u.name)))
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => selectedUnit = v),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
-        ],
       ),
     );
 
     final name = nameController.text.trim();
     final ticket = ticketController.text.trim();
     if (confirmed != true || name.isEmpty || ticket.isEmpty || !mounted) return;
+    if (isRound && selectedUnit == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please pick a department.')),
+      );
+      return;
+    }
 
     setState(() => _isAddingPatient = true);
     try {
       final auth = context.read<AuthProvider>();
       final supabase = context.read<SupabaseService>();
       // العيادة مصدرها 'clinic' صريح. الراوند بيتسجّل كـ 'referral' (مريض
-      // بيدخل الراوند مباشرة، مش جاي متسجّل من الطوارئ أصلًا) وهيفضل يبان في
-      // تاب الطوارئ لحد ما يتحدد له قسم من "Admit to unit" جوه الكارت — نفس
-      // القاعدة اللي بوت الراوند بالصوت شغال بيها (قسم إجباري بعد التسجيل).
-      // الطوارئ مبعتش p_source خالص فبترجع للافتراضي 'ed' في قاعدة البيانات.
+      // بيدخل الراوند مباشرة، مش جاي متسجّل من الطوارئ أصلًا). الطوارئ مبعتش
+      // p_source خالص فبترجع للافتراضي 'ed' في قاعدة البيانات.
       final source = widget.botKey == 'clinic'
           ? 'clinic'
           : widget.botKey == 'round'
@@ -117,12 +156,17 @@ class _BoardContentState extends State<_BoardContent> {
         ticket: ticket,
         source: source,
       );
-      if (!mounted) return;
-      if (widget.botKey == 'round') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Patient added. Pick a department to move them into Rounds.')),
+      // الراوند: تحجز القسم فورًا بعد التسجيل، عشان المريض يبان في تاب
+      // الراوند على طول بدل ما يفضل شايل في الطوارئ لحد الحجز.
+      if (isRound && selectedUnit != null) {
+        await supabase.admitToUnit(
+          entryCode: auth.entryCode!,
+          botKey: widget.botKey,
+          encounterId: encounterId,
+          unit: selectedUnit!,
         );
       }
+      if (!mounted) return;
       board.loadEncounters();
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
