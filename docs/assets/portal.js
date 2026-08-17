@@ -60,13 +60,40 @@ export function formatCodeForDisplay(raw) {
 // نداءات الـ backend — الاتنين RPC المسموحين لـ anon + webhook الإرسال
 // ----------------------------------------------------------------------------
 
+const REQUEST_TIMEOUT_MS = 12000;
+
+// بيلف أي promise بمهلة — لو الشبكة/الفايروول واقف الطلب من غير ما يرفضه
+// بخطأ صريح (بيفضل معلّق "pending" للأبد)، ده بيفشله بوضوح بدل ما الزرار
+// يفضل عالق على "جاري التحقق" من غير أي رسالة.
+function withTimeout(promise, ms = REQUEST_TIMEOUT_MS) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("timeout")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // app_portal_verify_code(p_access_code) → { valid, patient_first_name?, encounter_id? }
 // بيترجع { valid:false, rateLimited:true } لو AWN_TOO_MANY_ATTEMPTS، أو
 // { valid:false, error } لو أي خطأ تاني غير متوقع.
 export async function verifyCode(code) {
-  const { data, error } = await supabase.rpc("app_portal_verify_code", {
-    p_access_code: code,
-  });
+  let result;
+  try {
+    result = await withTimeout(
+      supabase.rpc("app_portal_verify_code", { p_access_code: code })
+    );
+  } catch (err) {
+    if (err && err.message === "timeout") {
+      return {
+        valid: false,
+        error:
+          "الطلب استغرق وقت طويل من غير رد — تأكد من اتصال الإنترنت عندك، أو إن الشبكة/الفايروول مش حاجب الوصول لموقع Supabase.",
+      };
+    }
+    return { valid: false, error: err && err.message ? err.message : String(err) };
+  }
+
+  const { data, error } = result;
 
   if (error) {
     if (String(error.message || "").startsWith("AWN_TOO_MANY_ATTEMPTS")) {
@@ -81,25 +108,43 @@ export async function verifyCode(code) {
 // app_portal_thread_patient(p_access_code) → { patient_first_name, messages }
 // بيتحقق من الكود في كل نداء — بيرجّع null لو الكود بقى مش صالح (أو أي خطأ).
 export async function fetchThread(code) {
-  const { data, error } = await supabase.rpc("app_portal_thread_patient", {
-    p_access_code: code,
-  });
-  if (error) return null;
-  return data;
+  try {
+    const { data, error } = await withTimeout(
+      supabase.rpc("app_portal_thread_patient", { p_access_code: code })
+    );
+    if (error) return null;
+    return data;
+  } catch (_) {
+    return null;
+  }
 }
 
 // POST مباشر لـ webhook n8n — مش نداء Supabase. بيرجّع { reply_text }.
+// مهلة أطول من نداءات Supabase (30 ثانية) لأن ده بيمرّ على AI Agent فعلي.
 export async function sendMessage(code, text) {
   const url = cfg.PORTAL_WEBHOOK_URL;
   if (!url || url.includes("PLACEHOLDER")) {
     throw new Error("webhook_not_configured");
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ access_code: code, text }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_code: code, text }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err && err.name === "AbortError") {
+      throw new Error("انتظرنا رد أكتر من 30 ثانية من غير جواب — تأكد من اتصال الإنترنت وجرب تاني.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) throw new Error("webhook_failed");
   return res.json();
@@ -293,7 +338,9 @@ async function submitCode(rawCode) {
     }
 
     if (!result.valid) {
-      setGateError("الكود مش صحيح. تأكد إنك كتبته زي ما هو مكتوب بالظبط.");
+      // result.error موجودة بس في حالة خطأ شبكة/سيرفر (مش "كود غلط" عادي) —
+      // مهم نفرّق بينهم عشان مايتوهوش المريض يفكر إنه غلط في كتابة الكود.
+      setGateError(result.error || "الكود مش صحيح. تأكد إنك كتبته زي ما هو مكتوب بالظبط.");
       return;
     }
 
@@ -335,9 +382,12 @@ sendForm.addEventListener("submit", async (e) => {
     // (portal_messages) زي رسالة المريض نفسها، من غير تكرار.
     if (pollController) pollController.pollNow();
   } catch (err) {
+    const msg = err && err.message && err.message !== "webhook_failed" && err.message !== "webhook_not_configured"
+      ? err.message
+      : "تعذّر إرسال الرسالة، جرّب تاني.";
     chatMessages.insertAdjacentHTML(
       "beforeend",
-      '<div class="send-error">تعذّر إرسال الرسالة، جرّب تاني.</div>'
+      `<div class="send-error">${escapeHtml(msg)}</div>`
     );
     chatMessages.scrollTop = chatMessages.scrollHeight;
   } finally {
