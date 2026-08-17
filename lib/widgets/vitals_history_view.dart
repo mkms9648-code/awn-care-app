@@ -13,20 +13,27 @@ const _metricLabels = {
 };
 
 class _Row {
-  _Row(this.label, this.value, this.time, this.doctor);
+  _Row(this.label, this.value, this.time, this.doctor, this.readings);
   final String label;
   final String value;
   final DateTime time;
   final String? doctor;
+  // القراءة (أو القراءتين لو ضغط) اللي بنت الصف ده — لازمة عشان زرار
+  // التعديل يعرف يبني الـ payload الكامل الجديد لنفس الحدث (event_id واحد
+  // مشترك بينهم لو كانوا مسجّلين مع بعض).
+  final List<VitalHistoryReading> readings;
 }
 
 /// فيتالز مقسّمة بالأيام — كل يوم قابل للطي/الفتح لوحده، وجواه جدول بسيط
 /// واضح (القراءة، الوقت، الدكتور). Day 1 = يوم دخول المريض.
 class VitalsHistoryView extends StatefulWidget {
-  const VitalsHistoryView({super.key, required this.readings, this.encounterOpenedAt});
+  const VitalsHistoryView({super.key, required this.readings, this.encounterOpenedAt, this.onEdit});
 
   final List<VitalHistoryReading> readings;
   final DateTime? encounterOpenedAt;
+  /// بيتنادى بزرار التعديل — الأبوين (patient_detail_screen) هو اللي بيفتح
+  /// الفورم ويعمل الـ correctEvent، عشان محتاج context/provider مش متاحين هنا.
+  final void Function(List<VitalHistoryReading> readings)? onEdit;
 
   @override
   State<VitalsHistoryView> createState() => _VitalsHistoryViewState();
@@ -56,13 +63,14 @@ class _VitalsHistoryViewState extends State<VitalsHistoryView> {
           '${sys?.value.round() ?? '—'}/${dia?.value.round() ?? '—'}',
           time,
           sys?.recordedBy ?? dia?.recordedBy,
+          [if (sys != null) sys, if (dia != null) dia],
         ));
       }
       for (final r in batch) {
         if (r.metric == 'bp_sys' || r.metric == 'bp_dia') continue;
         final label = _metricLabels[r.metric] ?? r.metric;
         final unit = r.unit != null && r.unit!.isNotEmpty ? ' ${r.unit}' : '';
-        rows.add(_Row(label, '${r.value}$unit', time, r.recordedBy));
+        rows.add(_Row(label, '${r.value}$unit', time, r.recordedBy, [r]));
       }
     }
     rows.sort((a, b) => a.time.compareTo(b.time));
@@ -157,12 +165,13 @@ class _VitalsHistoryViewState extends State<VitalsHistoryView> {
                 Expanded(flex: 3, child: Text('Reading', style: headerStyle)),
                 Expanded(flex: 4, child: Text('Time', style: headerStyle)),
                 Expanded(flex: 3, child: Text('By', style: headerStyle)),
+                if (widget.onEdit != null) const SizedBox(width: 28),
               ],
             ),
           ),
           for (var i = 0; i < rows.length; i++)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: i.isOdd ? theme.hintColor.withValues(alpha: 0.03) : null,
                 border: i < rows.length - 1 ? Border(bottom: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5))) : null,
@@ -186,6 +195,17 @@ class _VitalsHistoryViewState extends State<VitalsHistoryView> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (widget.onEdit != null)
+                    SizedBox(
+                      width: 28,
+                      child: IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Edit',
+                        onPressed: () => widget.onEdit!(rows[i].readings),
+                      ),
+                    ),
                 ],
               ),
             ),

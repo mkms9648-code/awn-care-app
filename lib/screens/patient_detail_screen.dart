@@ -114,6 +114,327 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     if (mounted) setState(() => assign(data));
   }
 
+  // ===========================================================================
+  // تعديل تسجيل موجود — احتياطي لو الصوت اتسمع غلط. كل تعديل بيعمل حدث تصحيح
+  // مربوط بالأصل عن طريق app_correct_event (مفيش مسح، السجل الطبي بيفضل
+  // كامل)، وبعدين بيحدّث بس القسم المتأثر (مش الكارت كله).
+  // ===========================================================================
+
+  Future<String?> _showEditTextDialog({
+    required String title,
+    required String initialText,
+    String label = 'Details',
+    int maxLines = 4,
+  }) async {
+    final controller = TextEditingController(text: initialText);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(labelText: label),
+          maxLines: maxLines,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (confirmed != true || controller.text.trim().isEmpty || !mounted) return null;
+    return controller.text.trim();
+  }
+
+  Future<void> _runCorrection(
+    Future<void> Function() action, {
+    required String successMessage,
+    Future<void> Function()? reload,
+  }) async {
+    setState(() => _actionInProgress = true);
+    try {
+      await action();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(successMessage)));
+      if (reload != null) {
+        await reload();
+      } else {
+        await _load();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
+  /// فيتال — [readings] قراءة واحدة أو اتنين (ضغط) بترجع من نفس الحدث. بيبني
+  /// فورم بعدد القيم المناسب، ويحافظ على نفس الـ metric/unit، القيمة بس هي
+  /// اللي بتتعدّل.
+  Future<void> _editVitalReadings(List<VitalHistoryReading> readings) async {
+    if (readings.isEmpty || readings.first.eventId == null) return;
+    final eventId = readings.first.eventId!;
+    final controllers = {for (final r in readings) r.metric: TextEditingController(text: '${r.value}')};
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Vital'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final r in readings)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextField(
+                  controller: controllers[r.metric],
+                  decoration: InputDecoration(
+                    labelText: (const {
+                          'bp_sys': 'Systolic',
+                          'bp_dia': 'Diastolic',
+                          'hr': 'Heart Rate',
+                          'temp': 'Temperature',
+                          'spo2': 'SpO2',
+                          'rbs': 'RBS',
+                          'gcs': 'GCS',
+                        }[r.metric] ??
+                        r.metric) +
+                        (r.unit != null && r.unit!.isNotEmpty ? ' (${r.unit})' : ''),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  autofocus: r == readings.first,
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final newReadings = <Map<String, dynamic>>[];
+    for (final r in readings) {
+      final parsed = double.tryParse(controllers[r.metric]!.text.trim());
+      if (parsed == null) return;
+      newReadings.add({'metric': r.metric, 'value': parsed, if (r.unit != null) 'unit': r.unit});
+    }
+
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: eventId,
+            newPayload: {'readings': newReadings, 'measured_at': readings.first.measuredAt.toUtc().toIso8601String()},
+          ),
+      successMessage: 'Vital updated.',
+      reload: _loadVitalsHistory,
+    );
+  }
+
+  Future<void> _editNoteEntry(NoteHistoryEntry note, void Function(List<NoteHistoryEntry>) assign) async {
+    if (note.eventId == null) return;
+    final newBody = await _showEditTextDialog(title: 'Edit Entry', initialText: note.body);
+    if (newBody == null) return;
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: note.eventId!,
+            newPayload: {'kind': note.kind, 'body': newBody},
+          ),
+      successMessage: 'Updated.',
+      reload: () => _loadNotesByKind(note.kind, assign),
+    );
+  }
+
+  Future<void> _editGeneralNote(NoteInfo note) async {
+    if (note.eventId == null) return;
+    final newBody = await _showEditTextDialog(title: 'Edit Note', initialText: note.body);
+    if (newBody == null) return;
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: note.eventId!,
+            newPayload: {'kind': note.kind, 'body': newBody},
+          ),
+      successMessage: 'Note updated.',
+    );
+  }
+
+  Future<void> _editOrder(OrderInfo o) async {
+    if (o.eventId == null) return;
+    final nameController = TextEditingController(text: o.name);
+    String category = _orderCategories.contains(o.category) ? o.category : _orderCategories.first;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Edit Order'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: category,
+                decoration: const InputDecoration(labelText: 'Category'),
+                items: _orderCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (v) => setDialogState(() => category = v ?? category),
+              ),
+              const SizedBox(height: 12),
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Order name'), autofocus: true),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || nameController.text.trim().isEmpty || !mounted) return;
+
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: o.eventId!,
+            newPayload: {'category': category, 'name': nameController.text.trim()},
+          ),
+      successMessage: 'Order updated.',
+    );
+  }
+
+  Future<void> _editMedication(MedicationHistoryEntry m) async {
+    if (m.eventId == null) return;
+    final nameController = TextEditingController(text: m.name);
+    final doseController = TextEditingController(text: m.dose ?? '');
+    final routeController = TextEditingController(text: m.route ?? '');
+    final frequencyController = TextEditingController(text: m.frequency ?? '');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Medication'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Drug name'), autofocus: true),
+              const SizedBox(height: 12),
+              TextField(controller: doseController, decoration: const InputDecoration(labelText: 'Dose')),
+              const SizedBox(height: 12),
+              TextField(controller: routeController, decoration: const InputDecoration(labelText: 'Route')),
+              const SizedBox(height: 12),
+              TextField(controller: frequencyController, decoration: const InputDecoration(labelText: 'Frequency')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (confirmed != true || nameController.text.trim().isEmpty || !mounted) return;
+
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: m.eventId!,
+            newPayload: {
+              'name': nameController.text.trim(),
+              if (doseController.text.trim().isNotEmpty) 'dose': doseController.text.trim(),
+              if (routeController.text.trim().isNotEmpty) 'route': routeController.text.trim(),
+              if (frequencyController.text.trim().isNotEmpty) 'frequency': frequencyController.text.trim(),
+              // بنحافظ على تاريخ الانتهاء الأصلي زي ما هو — الفورم ده مش بيعدّله.
+              if (m.endsAt != null) 'ends_at': m.endsAt!.toUtc().toIso8601String(),
+            },
+          ),
+      successMessage: 'Medication updated.',
+      reload: _loadPrescriptionHistory,
+    );
+  }
+
+  Future<void> _editCommitment(Commitment c) async {
+    if (c.eventId == null) return;
+    final textController = TextEditingController(text: c.text);
+    final daysController = TextEditingController(
+      text: c.dueAt != null ? '${c.dueAt!.difference(DateTime.now()).inDays}' : '',
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Follow-up'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: textController, decoration: const InputDecoration(labelText: 'Reason'), autofocus: true),
+              const SizedBox(height: 12),
+              TextField(
+                controller: daysController,
+                decoration: const InputDecoration(labelText: 'In how many days'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    final days = int.tryParse(daysController.text.trim());
+    if (confirmed != true || textController.text.trim().isEmpty || days == null || !mounted) return;
+
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: c.eventId!,
+            newPayload: {
+              'text': textController.text.trim(),
+              'due_at': DateTime.now().add(Duration(days: days)).toUtc().toIso8601String(),
+            },
+          ),
+      successMessage: 'Follow-up updated.',
+    );
+  }
+
+  Future<void> _editComplication(ComplicationInfo comp) async {
+    if (comp.eventId == null) return;
+    final newDescription = await _showEditTextDialog(title: 'Edit Complication', initialText: comp.description);
+    if (newDescription == null) return;
+    final auth = context.read<AuthProvider>();
+    await _runCorrection(
+      () => context.read<SupabaseService>().correctEvent(
+            entryCode: auth.entryCode!,
+            botKey: widget.botKey,
+            eventId: comp.eventId!,
+            newPayload: {'description': newDescription},
+          ),
+      successMessage: 'Complication updated.',
+    );
+  }
+
   Future<void> _confirmDischarge() async {
     final isClinic = _summary?.encounter.source == 'clinic';
     final actionLabel = isClinic ? 'Close Visit' : 'Discharge';
@@ -274,6 +595,28 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       );
       return;
     }
+
+    // انجليزي زي ما هو دايمًا؛ عربي بيترجم الجرعة/الطريقة/التكرار بس (قاموس
+    // مصطلحات معروف، آمن) — اسم الدواء يفضل انجليزي في الحالتين، والتعليمات
+    // بتتعرض زي ما اتكتبت بالظبط (ممكن الطبيب يكون كتبها عربي أصلًا).
+    final language = await showDialog<PrescriptionLanguage>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Prescription Language'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, PrescriptionLanguage.english),
+            child: const Text('English'),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, PrescriptionLanguage.arabic),
+            child: const Text('عربي'),
+          ),
+        ],
+      ),
+    );
+    if (language == null || !mounted) return;
+
     try {
       final auth = context.read<AuthProvider>();
       // التعليمات (kind='health_education') بتتحط تحت الأدوية في نفس الورقة —
@@ -285,7 +628,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             encounterId: widget.encounterId,
             kind: 'health_education',
           );
-      await sharePrescriptionPdf(_summary!, instructions: instructions);
+      await sharePrescriptionPdf(_summary!, instructions: instructions, language: language);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1085,6 +1428,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         child: VitalsHistoryView(
                           readings: _vitalsHistory ?? const [],
                           encounterOpenedAt: _summary!.encounter.openedAt,
+                          onEdit: isActive ? _editVitalReadings : null,
                         ),
                       ),
 
@@ -1108,23 +1452,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         child: NoteHistoryListView(
                           notes: _resultsNotes ?? const [],
                           emptyHint: 'No results recorded yet',
+                          onEdit: isActive ? (n) => _editNoteEntry(n, (v) => _resultsNotes = v) : null,
                         ),
                       ),
 
-                      // الروشتة والخطة العلاجية بيبقى واحد بس فعّال حسب
-                      // التاب — العيادة والطوارئ بيستخدموا "روشتة"، الراوند
-                      // بيستخدم "خطة علاج" (متابعة يومية سردية بدل روشتة
-                      // منفصلة). التقسيم ده بيلغي أي التباس ممكن يحصل للـ AI
-                      // بين الاتنين، لأنه مفيش اختيار أصلًا في كل تاب.
+                      // الروشتة والخطة العلاجية — الطوارئ عندها الاتنين (ممكن
+                      // يحتاج يسجل خطة قبل الحجز للراوند رسميًا)، العيادة
+                      // روشتة بس، الراوند خطة علاج بس (متابعة يومية سردية).
                       if (widget.botKey != 'round')
                         CollapsibleSection(
                           title: 'Prescription',
                           onAdd: isActive ? _showAddPrescriptionDialog : null,
                           onExpand: _loadPrescriptionHistory,
-                          child: MedicationHistoryListView(medications: _prescriptionHistory ?? const []),
+                          child: MedicationHistoryListView(
+                            medications: _prescriptionHistory ?? const [],
+                            onEdit: isActive ? _editMedication : null,
+                          ),
                         ),
 
-                      if (widget.botKey == 'round')
+                      if (widget.botKey == 'round' || widget.botKey == 'ed')
                         CollapsibleSection(
                           title: 'Treatment Plan',
                           onAdd: isActive
@@ -1139,6 +1485,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           child: NoteHistoryListView(
                             notes: _treatmentPlanNotes ?? const [],
                             emptyHint: 'No treatment plan yet',
+                            onEdit: isActive ? (n) => _editNoteEntry(n, (v) => _treatmentPlanNotes = v) : null,
                           ),
                         ),
 
@@ -1156,6 +1503,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         child: NoteHistoryListView(
                           notes: _alertsNotes ?? const [],
                           emptyHint: 'No instructions yet',
+                          onEdit: isActive ? (n) => _editNoteEntry(n, (v) => _alertsNotes = v) : null,
                         ),
                       ),
 
@@ -1173,6 +1521,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         child: NoteHistoryListView(
                           notes: _historyNotes ?? const [],
                           emptyHint: 'No history recorded yet',
+                          onEdit: isActive ? (n) => _editNoteEntry(n, (v) => _historyNotes = v) : null,
                         ),
                       ),
 
@@ -1202,6 +1551,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                                 leading: const Icon(Icons.warning_amber, color: AppTheme.accentOrange, size: 20),
                                 title: Text(c.description),
                                 dense: true,
+                                trailing: isActive && c.eventId != null
+                                    ? IconButton(
+                                        icon: const Icon(Icons.edit_outlined, size: 17),
+                                        visualDensity: VisualDensity.compact,
+                                        tooltip: 'Edit',
+                                        onPressed: () => _editComplication(c),
+                                      )
+                                    : null,
                               ),
                             ),
                           ],
@@ -1221,6 +1578,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                                 title: Text(n.body),
                                 subtitle: Text(n.kind),
                                 dense: true,
+                                trailing: isActive && n.eventId != null
+                                    ? IconButton(
+                                        icon: const Icon(Icons.edit_outlined, size: 17),
+                                        visualDensity: VisualDensity.compact,
+                                        tooltip: 'Edit',
+                                        onPressed: () => _editGeneralNote(n),
+                                      )
+                                    : null,
                               ),
                             ),
                           ],
@@ -1379,13 +1744,24 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         ),
         subtitle: Text(subtitleLines.join('\n')),
         isThreeLine: subtitleLines.length > 2,
-        trailing: o.isPending
-            ? IconButton(
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (o.eventId != null)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 17),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Edit',
+                onPressed: _actionInProgress ? null : () => _editOrder(o),
+              ),
+            if (o.isPending)
+              IconButton(
                 icon: const Icon(Icons.delete_outline, color: AppTheme.criticalRed),
                 tooltip: 'Cancel order',
                 onPressed: _actionInProgress ? null : () => _cancelOrder(o),
-              )
-            : null,
+              ),
+          ],
+        ),
         onTap: o.isPending && !_actionInProgress ? () => _completeOrder(o) : null,
       ),
     );
@@ -1405,6 +1781,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           'Due: $due',
           style: TextStyle(color: c.isOverdue ? AppTheme.criticalRed : theme.hintColor),
         ),
+        trailing: c.eventId != null
+            ? IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 17),
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Edit',
+                onPressed: _actionInProgress ? null : () => _editCommitment(c),
+              )
+            : null,
       ),
     );
   }

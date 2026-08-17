@@ -54,4 +54,5 @@ class AppConfig {
   static const String rpcVitalsHistory = 'app_vitals_history';
   static const String rpcNotesHistory = 'app_notes_history';
   static const String rpcMedicationsHistory = 'app_medications_history';
+  static const String rpcCorrectEvent = 'app_correct_event';
 }

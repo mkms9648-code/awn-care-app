@@ -9,10 +9,11 @@ final _dateTimeFmt = DateFormat('dd-MM-yyyy, hh:mm a');
 /// قائمة ملاحظات مؤرّخة — تُستخدم لـ Treatment Plan/التنبيهات وتعليمات
 /// العلاج/نتائج التحاليل. النص بيتعرض زي ما هو من غير تقصير.
 class NoteHistoryListView extends StatelessWidget {
-  const NoteHistoryListView({super.key, required this.notes, required this.emptyHint});
+  const NoteHistoryListView({super.key, required this.notes, required this.emptyHint, this.onEdit});
 
   final List<NoteHistoryEntry> notes;
   final String emptyHint;
+  final void Function(NoteHistoryEntry note)? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -29,15 +30,29 @@ class NoteHistoryListView extends StatelessWidget {
         for (final n in ordered)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(n.body, style: const TextStyle(fontSize: 13.5, height: 1.5)),
-                const SizedBox(height: 4),
-                Text(
-                  '${n.authoredBy != null ? 'Dr. ${n.authoredBy}' : 'Unknown'} · ${_dateTimeFmt.format(n.authoredAt)}',
-                  style: TextStyle(fontSize: 11, color: Theme.of(context).hintColor),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(n.body, style: const TextStyle(fontSize: 13.5, height: 1.5)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${n.authoredBy != null ? 'Dr. ${n.authoredBy}' : 'Unknown'} · ${_dateTimeFmt.format(n.authoredAt)}',
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).hintColor),
+                      ),
+                    ],
+                  ),
                 ),
+                if (onEdit != null && n.eventId != null)
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 17),
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Edit',
+                    onPressed: () => onEdit!(n),
+                  ),
               ],
             ),
           ),
@@ -48,9 +63,10 @@ class NoteHistoryListView extends StatelessWidget {
 
 /// روشتة كاملة — أدوية نشطة ومتوقفة، بترتيب زمني (الأحدث فوق)، مع شارة حالة.
 class MedicationHistoryListView extends StatelessWidget {
-  const MedicationHistoryListView({super.key, required this.medications});
+  const MedicationHistoryListView({super.key, required this.medications, this.onEdit});
 
   final List<MedicationHistoryEntry> medications;
+  final void Function(MedicationHistoryEntry med)? onEdit;
 
   static final _dateFmt = DateFormat('dd-MM-yyyy');
 
@@ -97,6 +113,13 @@ class MedicationHistoryListView extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (onEdit != null && m.eventId != null)
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        visualDensity: VisualDensity.compact,
+                        tooltip: 'Edit',
+                        onPressed: () => onEdit!(m),
+                      ),
                   ],
                 ),
                 if ([m.dose, m.route, m.frequency].whereType<String>().where((s) => s.isNotEmpty).isNotEmpty) ...[

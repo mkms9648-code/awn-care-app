@@ -658,6 +658,34 @@ class SupabaseService {
     }
   }
 
+  /// تصحيح حدث اتسجّل قبل كده (فيتال/ملاحظة/طلب/دواء/التزام/مضاعفة) — احتياطي
+  /// لو الصوت اتسمع غلط. بيعمل حدث جديد مربوط بالأصل (corrects_event_id) بدل
+  /// ما يمسحه (السجل الطبي مايتمسحش)، نفس نوع الحدث الأصلي، بـ payload كامل
+  /// جديد (مش delta). لازم الحدث الأصلي يكون قابل للتصحيح (value/entity) —
+  /// لو مش قابل، بيرجع سبب واضح بدل ما يفشل بصمت.
+  Future<void> correctEvent({
+    required String entryCode,
+    required String botKey,
+    required String eventId,
+    required Map<String, dynamic> newPayload,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    final result = await _client.rpc(
+      AppConfig.rpcCorrectEvent,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': botKey,
+        'p_chat_id': entryCode,
+        'p_event_id': eventId,
+        'p_new_payload': newPayload,
+      },
+    );
+    final map = result as Map<String, dynamic>;
+    if (map['status'] != 'ok') {
+      throw Exception('Could not save the edit: ${map['reason'] ?? map['status'] ?? map}');
+    }
+  }
+
   /// ملخص الأداء الشخصي لتاب التحليلات — حالات الدكتور الحالي بس (مش كل
   /// المؤسسة)، آخر [days] يوم للمؤشرات الزمنية (اتجاه الحالات المفتوحة).
   /// p_scope: 'mine' (بس حالات الطبيب الحالي) أو 'workspace' (المستشفى كله —

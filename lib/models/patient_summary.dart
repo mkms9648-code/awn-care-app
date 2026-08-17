@@ -148,6 +148,7 @@ class OrderInfo {
     required this.status,
     required this.resolvedAt,
     required this.resolvedBy,
+    this.eventId,
   });
 
   final String id;
@@ -158,6 +159,7 @@ class OrderInfo {
   final String status;
   final DateTime? resolvedAt;
   final String? resolvedBy;
+  final String? eventId;
 
   bool get isPending => status == 'pending';
   bool get isCompleted => status == 'completed';
@@ -173,6 +175,7 @@ class OrderInfo {
       status: json['status']?.toString() ?? 'pending',
       resolvedAt: DateTime.tryParse(json['resolved_at']?.toString() ?? '')?.toLocal(),
       resolvedBy: json['resolved_by']?.toString(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
@@ -184,6 +187,7 @@ class MedicationInfo {
     required this.dose,
     required this.route,
     required this.frequency,
+    this.eventId,
   });
 
   final String id;
@@ -191,6 +195,7 @@ class MedicationInfo {
   final String? dose;
   final String? route;
   final String? frequency;
+  final String? eventId;
 
   factory MedicationInfo.fromJson(Map<String, dynamic> json) {
     return MedicationInfo(
@@ -199,6 +204,7 @@ class MedicationInfo {
       dose: json['dose']?.toString(),
       route: json['route']?.toString(),
       frequency: json['frequency']?.toString(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
@@ -210,6 +216,7 @@ class Commitment {
     required this.dueAt,
     required this.isOverdue,
     required this.owner,
+    this.eventId,
   });
 
   final String id;
@@ -217,6 +224,7 @@ class Commitment {
   final DateTime? dueAt;
   final bool isOverdue;
   final String? owner;
+  final String? eventId;
 
   factory Commitment.fromJson(Map<String, dynamic> json) {
     return Commitment(
@@ -225,38 +233,43 @@ class Commitment {
       dueAt: DateTime.tryParse(json['due_at']?.toString() ?? '')?.toLocal(),
       isOverdue: json['overdue'] == true,
       owner: json['owner']?.toString(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
 
 class ComplicationInfo {
-  const ComplicationInfo({required this.id, required this.description, required this.openedAt});
+  const ComplicationInfo({required this.id, required this.description, required this.openedAt, this.eventId});
 
   final String id;
   final String description;
   final DateTime? openedAt;
+  final String? eventId;
 
   factory ComplicationInfo.fromJson(Map<String, dynamic> json) {
     return ComplicationInfo(
       id: json['id']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       openedAt: DateTime.tryParse(json['opened_at']?.toString() ?? '')?.toLocal(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
 
 class NoteInfo {
-  const NoteInfo({required this.kind, required this.body, required this.at});
+  const NoteInfo({required this.kind, required this.body, required this.at, this.eventId});
 
   final String kind;
   final String body;
   final DateTime? at;
+  final String? eventId;
 
   factory NoteInfo.fromJson(Map<String, dynamic> json) {
     return NoteInfo(
       kind: json['kind']?.toString() ?? 'note',
       body: json['body']?.toString() ?? '',
       at: DateTime.tryParse(json['at']?.toString() ?? '')?.toLocal(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
@@ -341,6 +354,7 @@ class VitalHistoryReading {
     required this.unit,
     required this.measuredAt,
     required this.recordedBy,
+    this.eventId,
   });
 
   final String metric;
@@ -348,6 +362,7 @@ class VitalHistoryReading {
   final String? unit;
   final DateTime measuredAt;
   final String? recordedBy;
+  final String? eventId;
 
   factory VitalHistoryReading.fromJson(Map<String, dynamic> json) {
     return VitalHistoryReading(
@@ -356,6 +371,7 @@ class VitalHistoryReading {
       unit: json['unit']?.toString(),
       measuredAt: DateTime.tryParse(json['measured_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
       recordedBy: json['recorded_by']?.toString(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
@@ -368,12 +384,14 @@ class NoteHistoryEntry {
     required this.body,
     required this.authoredAt,
     required this.authoredBy,
+    this.eventId,
   });
 
   final String kind;
   final String body;
   final DateTime authoredAt;
   final String? authoredBy;
+  final String? eventId;
 
   factory NoteHistoryEntry.fromJson(Map<String, dynamic> json) {
     return NoteHistoryEntry(
@@ -381,6 +399,7 @@ class NoteHistoryEntry {
       body: json['body']?.toString() ?? '',
       authoredAt: DateTime.tryParse(json['authored_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),
       authoredBy: json['authored_by']?.toString(),
+      eventId: json['event_id']?.toString(),
     );
   }
 }
@@ -397,6 +416,7 @@ class MedicationHistoryEntry {
     required this.startsAt,
     required this.endsAt,
     required this.prescribedBy,
+    this.eventId,
   });
 
   final String id;
@@ -408,6 +428,7 @@ class MedicationHistoryEntry {
   final DateTime? startsAt;
   final DateTime? endsAt;
   final String? prescribedBy;
+  final String? eventId;
 
   bool get isActive => status == 'active';
 
@@ -421,6 +442,7 @@ class MedicationHistoryEntry {
       status: json['status']?.toString() ?? 'active',
       startsAt: DateTime.tryParse(json['starts_at']?.toString() ?? '')?.toLocal(),
       endsAt: DateTime.tryParse(json['ends_at']?.toString() ?? '')?.toLocal(),
+      eventId: json['event_id']?.toString(),
       prescribedBy: json['prescribed_by']?.toString(),
     );
   }
