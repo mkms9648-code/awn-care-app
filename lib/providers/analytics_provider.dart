@@ -9,6 +9,11 @@ import '../utils/error_utils.dart';
 /// المستمرة في المستشفى).
 enum AnalyticsScope { hospital, clinic }
 
+/// المستوى الثاني، مستقل عن AnalyticsScope فوق — نفسي (بس حالاتي) أو
+/// المستشفى/الوركسبيس كله (كل الدكاترة). بيتحوّل مباشرة لـ p_scope في
+/// app_analytics_summary ('mine'/'workspace').
+enum AnalyticsLevel { mine, workspace }
+
 class AnalyticsProvider extends ChangeNotifier {
   AnalyticsProvider({
     required SupabaseService supabaseService,
@@ -32,6 +37,7 @@ class AnalyticsProvider extends ChangeNotifier {
   final String _hospitalBotKey;
 
   AnalyticsScope _scope;
+  AnalyticsLevel _level = AnalyticsLevel.mine;
   AnalyticsSummary? _summary;
   bool _isLoading = false;
   String? _error;
@@ -39,6 +45,7 @@ class AnalyticsProvider extends ChangeNotifier {
   bool get hasHospital => _hasHospital;
   bool get hasClinic => _hasClinic;
   AnalyticsScope get scope => _scope;
+  AnalyticsLevel get level => _level;
   AnalyticsSummary? get summary => _summary;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -46,6 +53,12 @@ class AnalyticsProvider extends ChangeNotifier {
   void setScope(AnalyticsScope scope) {
     if (_scope == scope) return;
     _scope = scope;
+    load();
+  }
+
+  void setLevel(AnalyticsLevel level) {
+    if (_level == level) return;
+    _level = level;
     load();
   }
 
@@ -58,7 +71,12 @@ class AnalyticsProvider extends ChangeNotifier {
       // بوت مختلف حسب النطاق المختار — clinic لوحدها، أو ed/round (أول
       // واحد مشترك فيه الدكتور) للمستشفى — عشان الأرقام متتخلطش مع بعض.
       final botKey = _scope == AnalyticsScope.clinic ? 'clinic' : _hospitalBotKey;
-      _summary = await _supabaseService.analyticsSummary(entryCode: _entryCode, botKey: botKey);
+      final scopeParam = _level == AnalyticsLevel.workspace ? 'workspace' : 'mine';
+      _summary = await _supabaseService.analyticsSummary(
+        entryCode: _entryCode,
+        botKey: botKey,
+        scope: scopeParam,
+      );
     } catch (e) {
       _error = describeError(e);
     } finally {

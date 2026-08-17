@@ -670,10 +670,13 @@ class SupabaseService {
 
   /// ملخص الأداء الشخصي لتاب التحليلات — حالات الدكتور الحالي بس (مش كل
   /// المؤسسة)، آخر [days] يوم للمؤشرات الزمنية (اتجاه الحالات المفتوحة).
+  /// p_scope: 'mine' (بس حالات الطبيب الحالي) أو 'workspace' (المستشفى كله —
+  /// بتضيف doctor_workload/active_doctors_count فوق نفس الحقول التانية).
   Future<AnalyticsSummary> analyticsSummary({
     required String entryCode,
     required String botKey,
     int days = 30,
+    String scope = 'mine',
   }) async {
     if (AppConfig.useMockData || _client == null) return AnalyticsSummary.empty;
     final result = await _client.rpc(
@@ -683,6 +686,7 @@ class SupabaseService {
         'p_bot_key': botKey,
         'p_chat_id': entryCode,
         'p_days': days,
+        'p_scope': scope,
       },
     );
     return AnalyticsSummary.fromJson(result as Map<String, dynamic>);
