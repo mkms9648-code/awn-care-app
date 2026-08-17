@@ -32,15 +32,18 @@ class SupabaseService {
     return StaffProfile.fromJson(result as Map<String, dynamic>);
   }
 
-  /// تسجيل مريض جديد مباشرة من زرار "+" في التاب — اسم وتذكرة بس، وكل حاجة
-  /// تانية اختيارية/فاضية. مفيش كارت مراجعة هنا لأن الطبيب هو نفسه اللي كاتب
-  /// القيمتين يدويًا (مفيش تفسير AI وسيط ممكن يغلط فيه).
+  /// تسجيل مريض جديد مباشرة من زرار "+" في التاب — اسم وتذكرة بس (وقسم لو
+  /// الراوند، مطلوب من app_create_patient نفسها لما بوت الراوند هو المنادي).
+  /// مفيش كارت مراجعة هنا لأن الطبيب هو نفسه اللي كاتب القيم يدويًا (مفيش
+  /// تفسير AI وسيط ممكن يغلط فيه). لو department اتبعتت، القسم بيتحدد مباشرة
+  /// جوه نفس النداء (current_unit_id) — مفيش داعي لنداء admit منفصل بعدها.
   Future<String> createPatient({
     required String entryCode,
     required String botKey,
     required String name,
     required String ticket,
     String? source,
+    String? department,
   }) async {
     if (AppConfig.useMockData || _client == null) {
       await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -55,6 +58,7 @@ class SupabaseService {
         'p_ticket': ticket,
         'p_name': name,
         if (source != null) 'p_source': source,
+        if (department != null) 'p_department': department,
       },
     );
     final map = result as Map<String, dynamic>;
@@ -66,6 +70,10 @@ class SupabaseService {
           throw Exception('Patient name is required.');
         case 'ticket_required':
           throw Exception('Ticket number is required.');
+        case 'department_required':
+          throw Exception('Please pick a department.');
+        case 'unknown_department':
+          throw Exception('That department was not recognized. Please pick one from the list.');
         default:
           throw Exception('Could not add patient: ${map['reason'] ?? map}');
       }
@@ -533,6 +541,11 @@ class SupabaseService {
   /// داخلي فريد لكل حجز — تفصيلة routing تقنية بحتة، مش حاجة تظهر للطبيب)،
   /// وبعدين unit_transfer (event موجود أصلًا في القاموس، مش مستخدم من الشات)
   /// عشان current_unit_id يتسجّل صح ويبان في ملخص المريض.
+  /// حجز/نقل مريض موجود لقسم — app_admit (migration 040+) بياخد القسم إجباري
+  /// وبيسجّل حدث unit_transfer بنفسه جوه نفس النداء، فمفيش داعي لنداء منفصل
+  /// بعدها. "دخول الراوند" بقى معتمد على current_unit_id مش على أي مقبض
+  /// سرير، فمفيش داعي نبعت رقم سرير أصلًا (اختياري بحت في app_admit، وبنسيبه
+  /// فاضي دايمًا — القسم هو المعرّف الوحيد اللي الطبيب بيشوفه أو يكتبه).
   Future<void> admitToUnit({
     required String entryCode,
     required String botKey,
@@ -541,13 +554,6 @@ class SupabaseService {
   }) async {
     if (AppConfig.useMockData || _client == null) return;
 
-    // app_admit بيرفض أي معرّف داخلي متكرر لمريض تاني لسه active — لازم قيمة
-    // فريدة لكل حجز، مش اسم القسم لوحده (غير كده تاني مريض في نفس القسم
-    // هيترفض). بنلحق جزء من الـ encounter_id عشان يضمن التفرّد. القيمة دي
-    // مفيش داعي إن الطبيب يشوفها أو يكتبها أبدًا.
-    final unitKey = unit.key.isNotEmpty ? unit.key : unit.name;
-    final internalSlot = '$unitKey-${encounterId.substring(0, 8)}';
-
     final admitResult = await _client.rpc(
       AppConfig.rpcAdmit,
       params: {
@@ -555,33 +561,17 @@ class SupabaseService {
         'p_bot_key': botKey,
         'p_chat_id': entryCode,
         'p_encounter_id': encounterId,
-        'p_bed': internalSlot,
+        'p_department': unit.name,
       },
     );
-    final admitStatus = (admitResult as Map<String, dynamic>)['status'];
-    if (admitStatus != 'ok') {
-      throw Exception('Could not admit to ${unit.name}. Please try again.');
-    }
-
-    final eventsResult = await _client.rpc(
-      AppConfig.rpcIngestEvents,
-      params: {
-        'p_platform': AppConfig.platform,
-        'p_bot_key': botKey,
-        'p_chat_id': entryCode,
-        'p_events': [
-          {
-            'event_type': 'unit_transfer',
-            'encounter_id': encounterId,
-            'payload': {'to_unit_id': unit.id},
-          },
-        ],
-        'p_dry_run': false,
-      },
-    );
-    final eventsStatus = (eventsResult as Map<String, dynamic>)['status'];
-    if (eventsStatus != 'ok') {
-      throw Exception('Unit assignment failed: ${eventsResult['problems'] ?? eventsResult}');
+    final map = admitResult as Map<String, dynamic>;
+    if (map['status'] != 'ok') {
+      switch (map['reason']) {
+        case 'unknown_department':
+          throw Exception('That department was not recognized. Please pick one from the list.');
+        default:
+          throw Exception('Could not admit to ${unit.name}. Please try again.');
+      }
     }
   }
 

@@ -149,23 +149,17 @@ class _BoardContentState extends State<_BoardContent> {
           : widget.botKey == 'round'
               ? 'referral'
               : null;
+      // الراوند: القسم بيتبعت في نفس نداء التسجيل — app_create_patient
+      // بتحدد current_unit_id مباشرة (وده اللي بيحدد ظهور المريض في تاب
+      // الراوند)، فمفيش داعي لنداء admit منفصل بعد كده.
       final encounterId = await supabase.createPatient(
         entryCode: auth.entryCode!,
         botKey: widget.botKey,
         name: name,
         ticket: ticket,
         source: source,
+        department: isRound ? selectedUnit!.name : null,
       );
-      // الراوند: تحجز القسم فورًا بعد التسجيل، عشان المريض يبان في تاب
-      // الراوند على طول بدل ما يفضل شايل في الطوارئ لحد الحجز.
-      if (isRound && selectedUnit != null) {
-        await supabase.admitToUnit(
-          entryCode: auth.entryCode!,
-          botKey: widget.botKey,
-          encounterId: encounterId,
-          unit: selectedUnit!,
-        );
-      }
       if (!mounted) return;
       board.loadEncounters();
       await Navigator.of(context).push(
