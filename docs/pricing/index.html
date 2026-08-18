@@ -7,177 +7,234 @@
   <meta name="description" content="اختر الباقة المناسبة لطريقة شغلك — عيادة، طوارئ، رعاية داخلية، متابعة المرضى، فرق طبية، أو مستشفيات." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link rel="icon" type="image/svg+xml" href="https://www.awnagent.com/favicon.svg" />
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
+  <nav class="navbar">
+    <a class="nav-brand" href="https://www.awnagent.com/care">
+      <img class="mark-img" src="https://www.awnagent.com/sites/care/assets/awn-care-doctor.png" alt="عون كير" />
+      <span class="nav-brand-name">عون <span>كير</span></span>
+    </a>
+    <a class="nav-cta" href="#start"><i class="ti ti-download"></i> ابدأ الآن</a>
+  </nav>
+
   <header class="hero">
-    <div class="wrap">
-      <div class="brand">عون <span>كير</span></div>
-      <h1>اختر الباقة المناسبة لطريقة شغلك</h1>
-      <p class="lead">ادفع حسب عدد المرضى اللي بتتعامل معاهم — مش حسب عدد رسايل الـAI أو التسجيلات الصوتية.</p>
-      <p class="sub">كل باقات الأطباء تشمل الـAI Documentation والـPatient Cards بدون أي حد إضافي على الاستخدام.</p>
+    <div class="hero-inner">
+      <span class="hero-eyebrow"><i class="ti ti-tag"></i> التسعير</span>
+      <h1 class="hero-h1">اختر الباقة المناسبة <span>لطريقة شغلك</span></h1>
+      <p class="hero-sub">ادفع حسب عدد المرضى اللي بتتعامل معاهم — مش حسب عدد رسايل الـAI أو التسجيلات الصوتية.</p>
+      <p class="hero-sub2">كل باقات الأطباء تشمل الـAI Documentation والـPatient Cards بدون أي حد إضافي على الاستخدام.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#start"><i class="ti ti-rocket"></i> ابدأ الآن</a>
+        <a class="btn-ghost" href="https://www.awnagent.com/care">شوف عون كير كامل <i class="ti ti-arrow-left"></i></a>
+      </div>
     </div>
   </header>
 
-  <nav class="tabs wrap" id="tabs">
-    <button class="tab active" data-t="doctors">👨‍⚕️ للأطباء</button>
-    <button class="tab" data-t="teams">👥 للفرق الطبية</button>
-    <button class="tab" data-t="hospitals">🏥 للمستشفيات</button>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-t="doctors"><i class="ti ti-stethoscope"></i> للأطباء</button>
+    <button class="tab" data-t="teams"><i class="ti ti-users"></i> للفرق الطبية</button>
+    <button class="tab" data-t="hospitals"><i class="ti ti-building-hospital"></i> للمستشفيات</button>
   </nav>
 
-  <main class="wrap">
+  <main>
     <!-- ===== الأطباء ===== -->
-    <section class="panel" id="panel-doctors">
-      <div class="grid">
-        <div class="card">
-          <div class="card-h">Clinic</div>
-          <div class="price">من <b>999</b> جنيه<span>/شهر</span></div>
-          <p class="desc">للدكاترة اللي شغلهم الأساسي عيادات ومتابعات.</p>
-          <ul>
-            <li>100 Patient Cards</li>
-            <li>تسجيل بالصوت أو الكتابة</li>
-            <li>AI يحول كلامك لبيانات طبية منظمة</li>
-            <li>Patient History + Attachments</li>
-            <li>Prescription + PDF</li>
-            <li>تقارير أساسية</li>
-          </ul>
-          <a class="btn" href="#start">ابدأ الآن</a>
+    <section class="section" id="panel-doctors">
+      <div class="section-inner">
+        <div class="grid">
+          <div class="card">
+            <div class="card-icon"><i class="ti ti-building-hospital"></i></div>
+            <div class="card-h">Clinic</div>
+            <div class="price">من <b>999</b> جنيه<span>/شهر</span></div>
+            <p class="desc">للدكاترة اللي شغلهم الأساسي عيادات ومتابعات.</p>
+            <ul>
+              <li><i class="ti ti-check"></i> 100 Patient Cards</li>
+              <li><i class="ti ti-check"></i> تسجيل بالصوت أو الكتابة</li>
+              <li><i class="ti ti-check"></i> AI يحول كلامك لبيانات طبية منظمة</li>
+              <li><i class="ti ti-check"></i> Patient History + Attachments</li>
+              <li><i class="ti ti-check"></i> Prescription + PDF</li>
+              <li><i class="ti ti-check"></i> تقارير أساسية</li>
+            </ul>
+            <a class="btn-card" href="#start">ابدأ الآن</a>
+          </div>
+
+          <div class="card">
+            <div class="card-icon accent-red"><i class="ti ti-ambulance"></i></div>
+            <div class="card-h">Emergency</div>
+            <div class="price">من <b>1,499</b> جنيه<span>/شهر</span></div>
+            <p class="desc">للدكاترة اللي بيشتغلوا في الطوارئ.</p>
+            <ul>
+              <li><i class="ti ti-check"></i> 100 Patient Cards</li>
+              <li><i class="ti ti-check"></i> Emergency Documentation</li>
+              <li><i class="ti ti-check"></i> Vital Signs + Medical History</li>
+              <li><i class="ti ti-check"></i> Orders + Attachments</li>
+              <li><i class="ti ti-check"></i> Admission / Discharge / Transfer</li>
+              <li><i class="ti ti-check"></i> تقارير الطوارئ</li>
+            </ul>
+            <a class="btn-card" href="#start">ابدأ الآن</a>
+          </div>
+
+          <div class="card">
+            <div class="card-icon accent-purple"><i class="ti ti-bed"></i></div>
+            <div class="card-h">Inpatient</div>
+            <div class="price">من <b>1,499</b> جنيه<span>/شهر</span></div>
+            <p class="desc">لإدارة ومتابعة المرضى المحجوزين.</p>
+            <ul>
+              <li><i class="ti ti-check"></i> حتى 50 Active Patients</li>
+              <li><i class="ti ti-check"></i> Daily Rounds + Vital Signs</li>
+              <li><i class="ti ti-check"></i> Orders + Lab Results</li>
+              <li><i class="ti ti-check"></i> Treatment Plan + Doctor Notes</li>
+              <li><i class="ti ti-check"></i> Patient Timeline</li>
+              <li><i class="ti ti-check"></i> Discharge</li>
+            </ul>
+            <a class="btn-card" href="#start">ابدأ الآن</a>
+          </div>
+
+          <div class="card featured">
+            <div class="badge">الأكثر اختيارًا</div>
+            <div class="card-icon"><i class="ti ti-sparkles"></i></div>
+            <div class="card-h">Doctor Pro</div>
+            <div class="price"><b>2,999</b> جنيه<span>/شهر</span></div>
+            <p class="desc">كل أدوات الدكتور في مكان واحد — Clinic + Emergency + Inpatient.</p>
+            <ul>
+              <li><i class="ti ti-check"></i> كل الموديولات التلاتة سوا</li>
+              <li><i class="ti ti-check"></i> AI Medical Documentation + Voice</li>
+              <li><i class="ti ti-check"></i> Patient Cards + Transfer</li>
+              <li><i class="ti ti-check"></i> Reports + Prescription PDF</li>
+              <li><i class="ti ti-check"></i> Patient Timeline + Basic Analytics</li>
+            </ul>
+            <a class="btn-card primary" href="#start">ابدأ الآن</a>
+          </div>
         </div>
 
-        <div class="card">
-          <div class="card-h">Emergency</div>
-          <div class="price">من <b>1,499</b> جنيه<span>/شهر</span></div>
-          <p class="desc">للدكاترة اللي بيشتغلوا في الطوارئ.</p>
-          <ul>
-            <li>100 Patient Cards</li>
-            <li>Emergency Documentation</li>
-            <li>Vital Signs + Medical History</li>
-            <li>Orders + Attachments</li>
-            <li>Admission / Discharge / Transfer</li>
-            <li>تقارير الطوارئ</li>
-          </ul>
-          <a class="btn" href="#start">ابدأ الآن</a>
-        </div>
-
-        <div class="card">
-          <div class="card-h">Inpatient</div>
-          <div class="price">من <b>1,499</b> جنيه<span>/شهر</span></div>
-          <p class="desc">لإدارة ومتابعة المرضى المحجوزين.</p>
-          <ul>
-            <li>حتى 50 Active Patients</li>
-            <li>Daily Rounds + Vital Signs</li>
-            <li>Orders + Lab Results</li>
-            <li>Treatment Plan + Doctor Notes</li>
-            <li>Patient Timeline</li>
-            <li>Discharge</li>
-          </ul>
-          <a class="btn" href="#start">ابدأ الآن</a>
-        </div>
-
-        <div class="card featured">
-          <div class="badge">الأكثر اختيارًا</div>
-          <div class="card-h">Doctor Pro ⭐</div>
-          <div class="price"><b>2,999</b> جنيه<span>/شهر</span></div>
-          <p class="desc">كل أدوات الدكتور في مكان واحد — Clinic + Emergency + Inpatient.</p>
-          <ul>
-            <li>كل الموديولات التلاتة سوا</li>
-            <li>AI Medical Documentation + Voice</li>
-            <li>Patient Cards + Transfer</li>
-            <li>Reports + Prescription PDF</li>
-            <li>Patient Timeline + Basic Analytics</li>
-          </ul>
-          <a class="btn primary" href="#start">ابدأ الآن</a>
-        </div>
-      </div>
-
-      <div class="addon">
-        <div class="addon-icon">🤖</div>
-        <div class="addon-body">
-          <div class="addon-h">Patient Follow-up <span>من 499 جنيه/شهر — إضافة على أي باقة</span></div>
-          <p>خلي المريض يتواصل معاك بدون مكالمات ورسائل عشوائية. بعد الزيارة، المريض يمسح QR على الروشتة ويدخل شات خاص بحالته — يشرح شكواه، يبعت صور وتحاليل، ويتابع معاك. وانت تستقبل إشعار فوري بالحالة كاملة، من غير ما تدّي رقمك الشخصي لحد.</p>
-          <a class="btn outline" href="#start">أضف Patient Follow-up</a>
+        <div class="addon">
+          <div class="addon-icon"><i class="ti ti-message-heart"></i></div>
+          <div class="addon-body">
+            <div class="addon-h">Patient Follow-up <span>من 499 جنيه/شهر — إضافة على أي باقة</span></div>
+            <p>خلي المريض يتواصل معاك بدون مكالمات ورسائل عشوائية. بعد الزيارة، المريض يمسح QR على الروشتة ويدخل شات خاص بحالته — يشرح شكواه، يبعت صور وتحاليل، ويتابع معاك. وانت تستقبل إشعار فوري بالحالة كاملة، من غير ما تدّي رقمك الشخصي لحد.</p>
+            <a class="btn-card outline" href="#start">أضف Patient Follow-up</a>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ===== الفرق الطبية ===== -->
-    <section class="panel hidden" id="panel-teams">
-      <div class="grid">
-        <div class="card"><div class="card-h">Team 3</div><div class="price"><b>5,999</b> جنيه<span>/شهر</span></div>
-          <ul><li>حتى 3 دكاترة</li><li>500 Patient Cards مشتركة</li></ul>
-          <a class="btn" href="#start">ابدأ الآن</a></div>
-        <div class="card"><div class="card-h">Team 5</div><div class="price"><b>8,999</b> جنيه<span>/شهر</span></div>
-          <ul><li>حتى 5 دكاترة</li><li>1,000 Patient Cards مشتركة</li></ul>
-          <a class="btn" href="#start">ابدأ الآن</a></div>
-        <div class="card featured"><div class="badge">الأكثر شيوعًا</div><div class="card-h">Team 10</div><div class="price"><b>14,999</b> جنيه<span>/شهر</span></div>
-          <ul><li>حتى 10 دكاترة</li><li>2,000 Patient Cards مشتركة</li></ul>
-          <a class="btn primary" href="#start">ابدأ الآن</a></div>
-        <div class="card"><div class="card-h">Team 20</div><div class="price"><b>24,999</b> جنيه<span>/شهر</span></div>
-          <ul><li>حتى 20 دكتور</li><li>5,000 Patient Cards مشتركة</li></ul>
-          <a class="btn" href="#start">ابدأ الآن</a></div>
+    <section class="section hidden" id="panel-teams">
+      <div class="section-inner">
+        <div class="grid">
+          <div class="card">
+            <div class="card-icon"><i class="ti ti-users"></i></div>
+            <div class="card-h">Team 3</div>
+            <div class="price"><b>5,999</b> جنيه<span>/شهر</span></div>
+            <ul><li><i class="ti ti-check"></i> حتى 3 دكاترة</li><li><i class="ti ti-check"></i> 500 Patient Cards مشتركة</li></ul>
+            <a class="btn-card" href="#start">ابدأ الآن</a>
+          </div>
+          <div class="card">
+            <div class="card-icon"><i class="ti ti-users"></i></div>
+            <div class="card-h">Team 5</div>
+            <div class="price"><b>8,999</b> جنيه<span>/شهر</span></div>
+            <ul><li><i class="ti ti-check"></i> حتى 5 دكاترة</li><li><i class="ti ti-check"></i> 1,000 Patient Cards مشتركة</li></ul>
+            <a class="btn-card" href="#start">ابدأ الآن</a>
+          </div>
+          <div class="card featured">
+            <div class="badge">الأكثر شيوعًا</div>
+            <div class="card-icon"><i class="ti ti-users"></i></div>
+            <div class="card-h">Team 10</div>
+            <div class="price"><b>14,999</b> جنيه<span>/شهر</span></div>
+            <ul><li><i class="ti ti-check"></i> حتى 10 دكاترة</li><li><i class="ti ti-check"></i> 2,000 Patient Cards مشتركة</li></ul>
+            <a class="btn-card primary" href="#start">ابدأ الآن</a>
+          </div>
+          <div class="card">
+            <div class="card-icon"><i class="ti ti-users"></i></div>
+            <div class="card-h">Team 20</div>
+            <div class="price"><b>24,999</b> جنيه<span>/شهر</span></div>
+            <ul><li><i class="ti ti-check"></i> حتى 20 دكتور</li><li><i class="ti ti-check"></i> 5,000 Patient Cards مشتركة</li></ul>
+            <a class="btn-card" href="#start">ابدأ الآن</a>
+          </div>
+        </div>
+        <p class="note">كل دكتور له Account خاص به، وكل الـPatient Data متاحة للفريق حسب الصلاحيات — Handover + Department Assignment + Activity Log.</p>
       </div>
-      <p class="note">كل دكتور له Account خاص به، وكل الـPatient Data متاحة للفريق حسب الصلاحيات (Handover + Department Assignment + Activity Log).</p>
     </section>
 
     <!-- ===== المستشفيات ===== -->
-    <section class="panel hidden" id="panel-hospitals">
-      <div class="hospital-card">
-        <h2>نظام واحد لإدارة رحلة المريض بالكامل</h2>
-        <p class="flow">Emergency → Inpatient → Clinics → Discharge → Follow-up</p>
-        <ul class="hcols">
-          <li>Multiple Doctors + Departments</li>
-          <li>Patient Transfer + Shared Records</li>
-          <li>Doctor &amp; Nurse Accounts + Permissions</li>
-          <li>Management Dashboard + Analytics</li>
-          <li>Department &amp; Doctor Performance</li>
-          <li>Patient Follow-up + Advanced Reporting</li>
-        </ul>
-        <div class="cta-big">
-          <div>حلول مخصصة حسب حجم المستشفى</div>
-          <a class="btn primary" href="#start">تواصل مع فريق المبيعات</a>
+    <section class="section hidden dark-bg" id="panel-hospitals">
+      <div class="section-inner">
+        <div class="hospital-card">
+          <span class="section-tag on-dark"><i class="ti ti-building-hospital"></i> للمستشفيات</span>
+          <h2 class="hospital-h">نظام واحد لإدارة رحلة المريض بالكامل</h2>
+          <p class="flow">Emergency → Inpatient → Clinics → Discharge → Follow-up</p>
+          <ul class="hcols">
+            <li><i class="ti ti-check"></i> Multiple Doctors + Departments</li>
+            <li><i class="ti ti-check"></i> Patient Transfer + Shared Records</li>
+            <li><i class="ti ti-check"></i> Doctor &amp; Nurse Accounts + Permissions</li>
+            <li><i class="ti ti-check"></i> Management Dashboard + Analytics</li>
+            <li><i class="ti ti-check"></i> Department &amp; Doctor Performance</li>
+            <li><i class="ti ti-check"></i> Patient Follow-up + Advanced Reporting</li>
+          </ul>
+          <div class="cta-big">
+            <div>حلول مخصصة حسب حجم المستشفى</div>
+            <a class="btn-primary" href="#start">تواصل مع فريق المبيعات</a>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ===== الأسئلة الشائعة ===== -->
-    <section class="faq">
-      <h2>أسئلة شائعة</h2>
+    <section class="section faq-bg">
+      <div class="section-inner">
+        <span class="section-tag"><i class="ti ti-help-circle"></i> أسئلة شائعة</span>
+        <h2 class="section-h2">محتاج تعرف كام حاجة قبل ما تبدأ؟</h2>
 
-      <details>
-        <summary>هل الـAI له حد استخدام؟</summary>
-        <p>لا تحتاج لمتابعة عدد رسايل الـAI أو التسجيلات الصوتية. الوحدة المحاسبية عندنا هي Patient Card مش عدد الرسايل — استخدم الـAI براحتك داخل حدود باقتك.</p>
-      </details>
-      <details>
-        <summary>ما المقصود بـPatient Card؟</summary>
-        <p>Patient Card هي ملف المريض داخل النظام بكل معلوماته وتحديثاته.</p>
-      </details>
-      <details>
-        <summary>لو المريض انتقل من الطوارئ إلى القسم، هل يتحسب كارت جديد؟</summary>
-        <p>لا. المريض ينتقل بملفه نفسه من Emergency إلى Inpatient، وتفضل بياناته متصلة — نفس الـPatient Episode.</p>
-      </details>
-      <details>
-        <summary>هل أحتاج أدفع لكل دكتور؟</summary>
-        <p>الباقة الفردية لدكتور واحد. أما الفرق والمستشفيات، فلكل دكتور Account خاص به ضمن خطة الفريق أو المؤسسة.</p>
-      </details>
-      <details>
-        <summary>هل يمكنني إضافة Patient Follow-up لاحقًا؟</summary>
-        <p>نعم، متاح كإضافة مستقلة على أي باقة وتقدر تفعّله في أي وقت.</p>
-      </details>
-      <details>
-        <summary>هل بيانات التسجيلات الصوتية تظل محفوظة؟</summary>
-        <p>لا. بعد نجاح تحويل الصوت لنص ومعالجة البيانات، يتم حذف التسجيل من التخزين المؤقت.</p>
-      </details>
+        <div class="faq-list">
+          <details>
+            <summary>هل الـAI له حد استخدام؟<i class="ti ti-chevron-down"></i></summary>
+            <p>لا تحتاج لمتابعة عدد رسايل الـAI أو التسجيلات الصوتية. الوحدة المحاسبية عندنا هي Patient Card مش عدد الرسايل — استخدم الـAI براحتك داخل حدود باقتك.</p>
+          </details>
+          <details>
+            <summary>ما المقصود بـPatient Card؟<i class="ti ti-chevron-down"></i></summary>
+            <p>Patient Card هي ملف المريض داخل النظام بكل معلوماته وتحديثاته.</p>
+          </details>
+          <details>
+            <summary>لو المريض انتقل من الطوارئ إلى القسم، هل يتحسب كارت جديد؟<i class="ti ti-chevron-down"></i></summary>
+            <p>لا. المريض ينتقل بملفه نفسه من Emergency إلى Inpatient، وتفضل بياناته متصلة — نفس الـPatient Episode.</p>
+          </details>
+          <details>
+            <summary>هل أحتاج أدفع لكل دكتور؟<i class="ti ti-chevron-down"></i></summary>
+            <p>الباقة الفردية لدكتور واحد. أما الفرق والمستشفيات، فلكل دكتور Account خاص به ضمن خطة الفريق أو المؤسسة.</p>
+          </details>
+          <details>
+            <summary>هل يمكنني إضافة Patient Follow-up لاحقًا؟<i class="ti ti-chevron-down"></i></summary>
+            <p>نعم، متاح كإضافة مستقلة على أي باقة وتقدر تفعّله في أي وقت.</p>
+          </details>
+          <details>
+            <summary>هل بيانات التسجيلات الصوتية تظل محفوظة؟<i class="ti ti-chevron-down"></i></summary>
+            <p>لا. بعد نجاح تحويل الصوت لنص ومعالجة البيانات، يتم حذف التسجيل من التخزين المؤقت.</p>
+          </details>
+        </div>
+      </div>
     </section>
 
-    <section class="finalcta" id="start">
-      <h2>جاهز تبدأ؟</h2>
-      <p>نزّل التطبيق، اعمل حساب، واختار الباقة المناسبة.</p>
-      <a class="btn primary big" href="https://github.com/mkms9648-code/awn-care-app/releases/latest/download/awn-care-app.apk">تحميل التطبيق</a>
+    <section class="final-cta" id="start">
+      <div class="final-cta-inner">
+        <h2>جاهز <span>تبدأ؟</span></h2>
+        <p>نزّل التطبيق، اعمل حساب، واختار الباقة المناسبة.</p>
+        <div class="final-cta-buttons">
+          <a class="btn-download" href="https://github.com/mkms9648-code/awn-care-app/releases/latest/download/awn-care-app.apk"><i class="ti ti-brand-android"></i> تحميل التطبيق</a>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="foot">© عون كير — Awn Care</footer>
+  <footer class="footer">
+    <div class="footer-brand">
+      <img class="mark-img" src="https://www.awnagent.com/sites/care/assets/awn-care-avatar.png" alt="عون كير" />
+      <span class="footer-brand-name">عون <span>كير</span></span>
+    </div>
+    <div class="footer-copy">© عون كير — Awn Care، أحد منتجات Awn Agents</div>
+  </footer>
 
   <script src="assets/pricing.js"></script>
 </body>
