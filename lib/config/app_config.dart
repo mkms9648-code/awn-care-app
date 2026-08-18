@@ -53,7 +53,7 @@ class AppConfig {
   /// query param (?code=...) عشان الـ QR يودّي المريض للشات مباشرة.
   static const String portalBaseUrl = String.fromEnvironment(
     'PORTAL_BASE_URL',
-    defaultValue: 'https://mkms9648-code.github.io/awn-care-app/',
+    defaultValue: 'https://www.awnagent.com/care/patient/',
   );
 
   static const String attachmentsBucket = 'attachments';
