@@ -1,10 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/app_config.dart';
+import '../models/app_notification.dart';
 import '../models/chat_message.dart';
 import '../models/encounter.dart';
 import '../models/patient_summary.dart';
 import '../models/analytics_summary.dart';
+import '../models/plan_usage.dart';
 import '../models/portal_escalation.dart';
 import '../models/portal_message.dart';
 import '../models/staff_profile.dart';
@@ -856,6 +858,30 @@ class SupabaseService {
     );
   }
 
+  /// رد الطبيب بمرفق (صورة/مستند) — بيتحط على كارت المريض الرسمي مباشرة
+  /// (attending الحدث هو الدكتور اللي بعت الرد نفسه) + في المحضر.
+  Future<void> portalReplyAttachment({
+    required String entryCode,
+    required String escalationId,
+    required String storagePath,
+    required String kind,
+    String? caption,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcPortalReplyAttachment,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_escalation_id': escalationId,
+        'p_storage_path': storagePath,
+        'p_kind': kind,
+        'p_caption': caption,
+      },
+    );
+  }
+
   /// رد الطبيب على تصعيد — رسالة نصية بترجع للمريض عن طريق البورتال (مفيش
   /// أي معالجة AI هنا، مجرد تحويل مباشر).
   Future<void> portalReply({
@@ -924,6 +950,55 @@ class SupabaseService {
     'notes',
     'handles',
   ];
+
+  // ===========================================================================
+  // Plan usage + notifications — بروفايل عام مش خاص بموديول معيّن، فمفيش
+  // botKey فعلي مؤثر هنا (app_bind_any بيتجاهله)، بنبعت قيمة ثابتة بس عشان
+  // شكل النداء يفضل زي باقي الدوال.
+  // ===========================================================================
+  static const String _profileBotKey = 'ed';
+
+  Future<PlanUsage> planUsage({required String entryCode}) async {
+    if (AppConfig.useMockData || _client == null) {
+      return const PlanUsage(daysUntilRenewal: 0, modules: []);
+    }
+    final result = await _client.rpc(
+      AppConfig.rpcPlanUsage,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _profileBotKey,
+        'p_chat_id': entryCode,
+      },
+    );
+    return PlanUsage.fromJson(result as Map<String, dynamic>);
+  }
+
+  Future<List<AppNotification>> notificationsList({required String entryCode}) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcNotificationsList,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _profileBotKey,
+        'p_chat_id': entryCode,
+      },
+    );
+    final list = (result as Map<String, dynamic>)['results'] as List<dynamic>? ?? [];
+    return list.map((e) => AppNotification.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> notificationsMarkRead({required String entryCode, required String notificationId}) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcNotificationsMarkRead,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _profileBotKey,
+        'p_chat_id': entryCode,
+        'p_notification_id': notificationId,
+      },
+    );
+  }
 
   RealtimeChannel? subscribeEncounters({
     required String workspaceId,

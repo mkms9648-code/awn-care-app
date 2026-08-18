@@ -9,6 +9,7 @@ class PortalEscalation {
     required this.patientName,
     required this.patientPhone,
     required this.ticket,
+    required this.botKey,
     required this.reason,
     required this.status,
     required this.createdAt,
@@ -20,6 +21,7 @@ class PortalEscalation {
   final String patientName;
   final String? patientPhone;
   final String? ticket;
+  final String botKey;
   final String reason;
   final String status;
   final DateTime createdAt;
@@ -36,6 +38,7 @@ class PortalEscalation {
       patientName: json['patient_name']?.toString() ?? 'Unknown',
       patientPhone: json['patient_phone']?.toString(),
       ticket: json['ticket']?.toString(),
+      botKey: json['bot_key']?.toString() ?? 'ed',
       reason: json['reason']?.toString() ?? '',
       status: json['status']?.toString() ?? 'open',
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '')?.toLocal() ?? DateTime.now(),

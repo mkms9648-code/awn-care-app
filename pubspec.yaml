@@ -1,7 +1,7 @@
 name: awn_care
 description: Awn Care — personal assistant for resident physicians in the hospital.
 publish_to: 'none'
-version: 1.6.1+19
+version: 1.7.0+20
 
 environment:
   sdk: ^3.12.2

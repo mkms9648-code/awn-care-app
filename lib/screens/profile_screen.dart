@@ -1,11 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/plan_usage.dart';
 import '../providers/auth_provider.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import 'notifications_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  PlanUsage? _usage;
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final auth = context.read<AuthProvider>();
+    final service = context.read<SupabaseService>();
+    try {
+      final results = await Future.wait([
+        service.planUsage(entryCode: auth.entryCode!),
+        service.notificationsList(entryCode: auth.entryCode!),
+      ]);
+      if (mounted) {
+        setState(() {
+          _usage = results[0] as PlanUsage;
+          _unreadCount = (results[1] as List).where((n) => n.isUnread == true).length;
+        });
+      }
+    } catch (_) {
+      // بيانات ثانوية — لو فشلت مفيش داعي توقف باقي شاشة البروفايل.
+    }
+  }
+
+  String _moduleLabel(String key) {
+    switch (key) {
+      case 'ed':
+        return 'Emergency';
+      case 'round':
+        return 'Rounds';
+      case 'clinic':
+        return 'Clinic';
+      default:
+        return key;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +64,23 @@ class ProfileScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: Badge(
+              label: Text('$_unreadCount'),
+              isLabelVisible: _unreadCount > 0,
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            tooltip: 'Notifications',
+            onPressed: () async {
+              await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const NotificationsScreen()));
+              _load();
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -110,6 +175,60 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (_usage != null && _usage!.modules.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _sectionHeader('Plan Usage', theme),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.event_outlined, size: 16, color: theme.hintColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_usage!.daysUntilRenewal} days until renewal',
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    for (final m in _usage!.modules) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(_moduleLabel(m.moduleKey), style: const TextStyle(fontWeight: FontWeight.w600)),
+                          ),
+                          Text(
+                            '${m.used} / ${m.maxPerPeriod}',
+                            style: TextStyle(
+                              color: m.fraction >= 0.9 ? AppTheme.criticalRed : theme.hintColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: m.fraction,
+                          minHeight: 8,
+                          backgroundColor: theme.dividerColor.withValues(alpha: 0.3),
+                          valueColor: AlwaysStoppedAnimation(
+                            m.fraction >= 0.9 ? AppTheme.criticalRed : AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: () async {

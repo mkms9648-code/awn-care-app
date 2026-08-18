@@ -17,14 +17,20 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  bool _obscure = true;
+  List<String> _history = [];
 
   @override
   void initState() {
     super.initState();
     // بيحط آخر كود اتسجّل بيه جاهز في الخانة (مش تسجيل دخول تلقائي) — الطبيب
     // يقدر يمسحه ويكتب كود تاني عادي لو عايز.
-    context.read<AuthService>().getEntryCode().then((code) {
+    final authService = context.read<AuthService>();
+    authService.getEntryCode().then((code) {
       if (mounted && code != null) setState(() => _controller.text = code);
+    });
+    authService.getEntryCodeHistory().then((history) {
+      if (mounted) setState(() => _history = history);
     });
   }
 
@@ -94,18 +100,44 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
                     maxLength: 6,
-                    obscureText: true,
+                    obscureText: _obscure,
                     obscuringCharacter: '•',
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     style: const TextStyle(fontSize: 28, letterSpacing: 12, fontWeight: FontWeight.w600),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Entry Code',
                       hintText: '••••••',
                       counterText: '',
-                      prefixIcon: Icon(Icons.lock_outline),
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                        tooltip: _obscure ? 'Show code' : 'Hide code',
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                      ),
                     ),
                     onSubmitted: (_) => _submit(),
                   ),
+                  if (_history.length > 1) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _history
+                          .where((c) => c != _controller.text)
+                          .map(
+                            (code) => ActionChip(
+                              label: Text('•••${code.substring(code.length - 2)}'),
+                              avatar: const Icon(Icons.history, size: 16),
+                              onPressed: () => setState(() {
+                                _controller.text = code;
+                                _obscure = false;
+                              }),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
                   if (auth.error != null) ...[
                     const SizedBox(height: 12),
                     Text(

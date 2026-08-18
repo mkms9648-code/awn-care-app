@@ -42,6 +42,13 @@ class AppConfig {
     defaultValue: 'https://n8n-c1bz.srv1841520.hstgr.cloud/webhook/translate-mobile',
   );
 
+  /// نفس فكرة translateWebhookUrl بس بيرجّع نص منقول من صوت — stateless برضه،
+  /// بياخد storage_path لملف مرفوع بالفعل ويرجّع transcribed_text.
+  static const String transcribeWebhookUrl = String.fromEnvironment(
+    'TRANSCRIBE_WEBHOOK_URL',
+    defaultValue: 'https://n8n-c1bz.srv1841520.hstgr.cloud/webhook/transcribe-mobile',
+  );
+
   /// صفحة شات بوابة المريض العامة (GitHub Pages) — بيتحط الكود بعدها كـ
   /// query param (?code=...) عشان الـ QR يودّي المريض للشات مباشرة.
   static const String portalBaseUrl = String.fromEnvironment(
@@ -78,7 +85,11 @@ class AppConfig {
   static const String rpcPortalInbox = 'app_portal_inbox';
   static const String rpcPortalThread = 'app_portal_thread';
   static const String rpcPortalReply = 'app_portal_reply';
+  static const String rpcPortalReplyAttachment = 'app_portal_reply_attachment';
   static const String rpcSetPortalAiPaused = 'app_portal_set_ai_paused';
   static const String rpcPortalResolve = 'app_portal_resolve';
   static const String rpcRegisterPushToken = 'app_register_push_token';
+  static const String rpcPlanUsage = 'app_plan_usage';
+  static const String rpcNotificationsList = 'app_notifications_list';
+  static const String rpcNotificationsMarkRead = 'app_notifications_mark_read';
 }

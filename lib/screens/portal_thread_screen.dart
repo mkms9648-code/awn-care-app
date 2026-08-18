@@ -1,19 +1,28 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/portal_escalation.dart';
 import '../models/portal_message.dart';
 import '../providers/auth_provider.dart';
+import '../services/chat_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/error_utils.dart';
 import '../widgets/portal_message_bubble.dart';
+import 'patient_detail_screen.dart';
 
-/// محادثة تصعيد واحد — بيقرا/يكتب مباشرة عن طريق SupabaseService (state
-/// محلي في الشاشة، زي PatientDetailScreen)، مش عن طريق ChatProvider/ChatService
-/// (دول مبنيين حوالين AI/صوت/صور/كارت مراجعة — رد الطبيب هنا نص عادي بيترحّل
-/// للمريض، مفيش دور AI في نداء الطبيب نفسه).
+/// محادثة تصعيد واحد — state محلي في الشاشة زي PatientDetailScreen، مش عن
+/// طريق ChatProvider (ده مبني حوالين AI/كارت مراجعة، مش موجودين هنا — رد
+/// الطبيب نص عادي بيترحّل للمريض من غير أي معالجة AI). بيستخدم ChatService
+/// بس للرفع/النقل الصوتي (uploadAttachment/transcribeAudio)، نفس أدوات
+/// الصوت/الصور الموجودة بالفعل للبوتات التانية.
 class PortalThreadScreen extends StatefulWidget {
   const PortalThreadScreen({super.key, required this.escalation});
 
@@ -33,6 +42,11 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
   bool _actionInProgress = false;
   bool _aiPaused = false;
 
+  final _recorder = AudioRecorder();
+  bool _isRecording = false;
+  bool _isTranscribing = false;
+  bool _isAttaching = false;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +57,7 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _recorder.dispose();
     super.dispose();
   }
 
@@ -176,6 +191,92 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
     }
   }
 
+  /// تسجيل صوتي للدكتور — بيملأ خانة الكتابة بالنص المنقول، مش بيبعت تلقائي،
+  /// عشان الدكتور يراجع/يعدّل قبل الإرسال (نص هيوصل للمريض مباشرة، عكس صوت
+  /// البوتات التانية اللي بتتسجل زي ما هي).
+  Future<void> _startRecording() async {
+    try {
+      final hasPermission = await _recorder.hasPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Microphone permission required.')),
+          );
+        }
+        return;
+      }
+      final dir = await getTemporaryDirectory();
+      final path = '${dir.path}/portal_reply_${const Uuid().v4()}.m4a';
+      await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
+      setState(() => _isRecording = true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopRecordingAndTranscribe() async {
+    final path = await _recorder.stop();
+    setState(() => _isRecording = false);
+    if (path == null || !mounted) return;
+
+    setState(() => _isTranscribing = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final chatService = context.read<ChatService>();
+      final storagePath = await chatService.uploadAttachment(
+        entryCode: auth.entryCode!,
+        file: File(path),
+        type: 'voice',
+      );
+      final text = await chatService.transcribeAudio(storagePath);
+      if (mounted) {
+        _textController.text = _textController.text.isEmpty ? text : '${_textController.text} $text';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isTranscribing = false);
+    }
+  }
+
+  Future<void> _attachPhoto() async {
+    final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (file == null || !mounted) return;
+
+    setState(() => _isAttaching = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final storagePath = await context.read<ChatService>().uploadAttachment(
+            entryCode: auth.entryCode!,
+            file: File(file.path),
+            type: 'photo',
+          );
+      await context.read<SupabaseService>().portalReplyAttachment(
+            entryCode: auth.entryCode!,
+            escalationId: widget.escalation.escalationId,
+            storagePath: storagePath,
+            kind: 'photo',
+          );
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAttaching = false);
+    }
+  }
+
   Future<void> _callPatient() async {
     final phone = widget.escalation.patientPhone;
     if (phone == null || phone.trim().isEmpty) {
@@ -215,6 +316,16 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
               )
             : null,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.badge_outlined),
+            tooltip: 'Open patient card',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => PatientDetailScreen(encounterId: e.encounterId, botKey: e.botKey),
+              ),
+            ),
+          ),
           IconButton(
             icon: Icon(_aiPaused ? Icons.smart_toy : Icons.smart_toy_outlined),
             tooltip: _aiPaused ? 'Resume AI' : 'Take over (pause AI)',
@@ -305,6 +416,29 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          if (_isAttaching)
+            const Padding(
+              padding: EdgeInsets.all(10),
+              child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.photo_outlined),
+              tooltip: 'Attach photo',
+              onPressed: _attachPhoto,
+            ),
+          if (_isTranscribing)
+            const Padding(
+              padding: EdgeInsets.all(10),
+              child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else
+            IconButton(
+              icon: Icon(_isRecording ? Icons.stop_circle : Icons.mic_none_outlined),
+              color: _isRecording ? AppTheme.criticalRed : null,
+              tooltip: _isRecording ? 'Stop and transcribe' : 'Record voice',
+              onPressed: _isRecording ? _stopRecordingAndTranscribe : _startRecording,
+            ),
           Expanded(
             child: TextField(
               controller: _textController,

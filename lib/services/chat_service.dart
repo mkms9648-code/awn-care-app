@@ -51,6 +51,31 @@ class ChatService {
     return storagePath;
   }
 
+  /// نص منقول من ملف صوت مرفوع بالفعل (storage_path) — لشات المساعد بس، بيرجع
+  /// النص عشان الدكتور يراجعه/يعدّله قبل الإرسال (مش auto-send)، مختلف عن
+  /// مسار الصوت العادي للبوتات التانية اللي بيبعت الصوت نفسه كرسالة.
+  Future<String> transcribeAudio(String storagePath) async {
+    if (AppConfig.useMockData) {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      return '(demo transcription)';
+    }
+    final response = await _http
+        .post(
+          Uri.parse(AppConfig.transcribeWebhookUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'storage_path': storagePath}),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('Transcription failed: ${response.statusCode}');
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final text = body['transcribed_text']?.toString().trim() ?? '';
+    if (text.isEmpty) throw Exception('Transcription returned empty text');
+    return text;
+  }
+
   Future<WebhookResponse> sendMessage({
     required String entryCode,
     required ChatBotKey botKey,
