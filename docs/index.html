@@ -11,8 +11,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="assets/style.css?v=4" />
-  <script src="config.js?v=4"></script>
+  <link rel="stylesheet" href="assets/style.css?v=5" />
+  <script src="config.js?v=5"></script>
 </head>
 <body>
   <!-- شاشة 1: إدخال كود الوصول -->
@@ -59,6 +59,13 @@
     </div>
 
     <form class="chat-input-bar" id="send-form">
+      <input type="file" id="attach-input" accept="image/*,.pdf,.doc,.docx" hidden />
+      <button type="button" class="icon-btn" id="attach-btn" aria-label="إرفاق صورة أو مستند">
+        <i class="ti ti-paperclip"></i>
+      </button>
+      <button type="button" class="icon-btn" id="mic-btn" aria-label="رسالة صوتية" hidden>
+        <i class="ti ti-microphone"></i>
+      </button>
       <input
         type="text"
         id="message-input"
@@ -72,6 +79,6 @@
     </form>
   </div>
 
-  <script type="module" src="assets/portal.js?v=4"></script>
+  <script type="module" src="assets/portal.js?v=5"></script>
 </body>
 </html>

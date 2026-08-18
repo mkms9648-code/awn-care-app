@@ -289,6 +289,58 @@ input:focus {
 /* أيقونة الإرسال بتتظبط شوية لليمين في RTL عشان تبان متوسّطة بصريًا */
 .send-btn i { transform: scaleX(-1); }
 
+/* أزرار الإرفاق/الصوت — أصغر وأبسط من زرار الإرسال، بلون رمادي محايد */
+.icon-btn {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--grey-1);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.icon-btn:hover { background: var(--orange-light); color: var(--orange-dark); }
+.icon-btn:disabled { opacity: 0.5; cursor: default; }
+.icon-btn.recording { color: var(--critical); background: var(--critical-bg); animation: pulse 1.2s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* مرفق صورة جوه الفقاعة */
+.bubble-attachment { margin-bottom: 6px; border-radius: 10px; overflow: hidden; max-width: 240px; }
+.bubble-attachment img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.attachment-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--grey-2);
+  font-size: 0.85em;
+  background: var(--rule);
+  border-radius: 10px;
+}
+
+/* مرفق مستند (PDF/Word) جوه الفقاعة — رابط قابل للضغط */
+.bubble-attachment-doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: var(--orange-dark);
+}
+.bubble-attachment-doc:hover { background: var(--orange-light); }
+
 /* ============================================================================
    شاشات أوسع (تابلت/ديسكتوب) — الشات بيتحط في عمود متوسط بدل ما يفرد الشاشة
    كاملة، لكن بلاي-أوت الموبايل هو الأساس اللي كل حاجة اتبنت عليه.

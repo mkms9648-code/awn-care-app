@@ -180,6 +180,60 @@ export async function sendMessage(code, text) {
   return res.json();
 }
 
+// رفع ملف مباشر لـ Supabase Storage (bucket "attachments" — نفس الاسم/الأسلوب
+// اللي التطبيق بيستخدمه لمرفقات الدكتور، عشان اتساق المسارات). بيرجع
+// storage_path (بدون الـ bucket نفسه) لتخزينه في السيرفر.
+async function uploadToStorage(file, code) {
+  const ext = (file.name && file.name.includes(".")) ? file.name.split(".").pop() : (file.type.split("/")[1] || "bin");
+  const path = `${code}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const res = await fetch(`${cfg.SUPABASE_URL}/storage/v1/object/attachments/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: cfg.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`,
+      "Content-Type": file.type || "application/octet-stream",
+    },
+    body: file,
+  });
+  if (!res.ok) throw new Error("upload_failed");
+  return path;
+}
+
+// رابط مؤقت (ساعة) لعرض مرفق — الـ bucket مش عام. بيتم الكاش عشان الـ polling
+// المتكرر مايطلبش رابط جديد لنفس الصورة كل شوية ثواني.
+const _signedUrlCache = new Map();
+async function getSignedUrl(storagePath) {
+  if (_signedUrlCache.has(storagePath)) return _signedUrlCache.get(storagePath);
+  const res = await fetch(`${cfg.SUPABASE_URL}/storage/v1/object/sign/attachments/${storagePath}`, {
+    method: "POST",
+    headers: {
+      apikey: cfg.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ expiresIn: 3600 }),
+  });
+  if (!res.ok) return null;
+  const body = await res.json();
+  const url = body.signedURL ? `${cfg.SUPABASE_URL}/storage/v1${body.signedURL}` : null;
+  if (url) _signedUrlCache.set(storagePath, url);
+  return url;
+}
+
+// إرسال مرفق (بعد الرفع) — نفس webhook الرسايل، بنوع مختلف. n8n بيسجله على
+// كارت المريض الرسمي مباشرة، مش بس في المحادثة.
+export async function sendAttachment(code, storagePath, kind, caption) {
+  const url = cfg.PORTAL_WEBHOOK_URL;
+  if (!url || url.includes("PLACEHOLDER")) throw new Error("webhook_not_configured");
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_code: code, type: "attachment", storage_path: storagePath, kind, caption }),
+  });
+  if (!res.ok) throw new Error("webhook_failed");
+  return res.json();
+}
+
 // بولّينج للتريد كل ~5 ثواني، بيوقف تلقائي لما التاب يبقى في الخلفية وبيرجع
 // يشتغل (مع تحديث فوري) لما التاب يرجع يبان. بيعيد الرندر بس لو محتوى
 // الرسايل اتغيّر فعليًا (مقارنة signature نصية بسيطة).
@@ -266,6 +320,9 @@ const chatMessages = document.getElementById("chat-messages");
 const sendForm = document.getElementById("send-form");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
+const micBtn = document.getElementById("mic-btn");
+const attachBtn = document.getElementById("attach-btn");
+const attachInput = document.getElementById("attach-input");
 
 let activeCode = null;
 let pollController = null;
@@ -298,18 +355,41 @@ function renderMessages(thread) {
   }
 
   chatMessages.innerHTML = messages
-    .map((m) => {
+    .map((m, i) => {
       const side = m.sender === "patient" ? "bubble-patient" : m.sender === "doctor" ? "bubble-doctor" : "bubble-ai";
       const label = SENDER_LABELS[m.sender] ? `<div class="bubble-label">${SENDER_LABELS[m.sender]}</div>` : "";
+      const isImage = m.attachment_storage_path && m.attachment_kind === "photo";
+      const isDoc = m.attachment_storage_path && m.attachment_kind !== "photo";
+      const attachmentHtml = isImage
+        ? `<div class="bubble-attachment" data-path="${escapeHtml(m.attachment_storage_path)}" data-idx="${i}"><div class="attachment-loading">جاري تحميل الصورة…</div></div>`
+        : isDoc
+        ? `<div class="bubble-attachment-doc" data-path="${escapeHtml(m.attachment_storage_path)}" data-idx="${i}"><i class="ti ti-file-text"></i> فتح المستند</div>`
+        : "";
       return `
         <div class="bubble ${side}">
           ${label}
+          ${attachmentHtml}
           <div class="bubble-text" dir="auto">${escapeHtml(m.body)}</div>
         </div>`;
     })
     .join("");
 
   chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // تحميل روابط الصور/المستندات الموقّعة بعد الرندر (async، مش هيوقف عرض النص)
+  chatMessages.querySelectorAll(".bubble-attachment[data-path]").forEach((el) => {
+    getSignedUrl(el.dataset.path).then((url) => {
+      el.innerHTML = url
+        ? `<img src="${escapeHtml(url)}" alt="مرفق" loading="lazy" />`
+        : '<div class="attachment-loading">تعذّر تحميل الصورة</div>';
+    });
+  });
+  chatMessages.querySelectorAll(".bubble-attachment-doc[data-path]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      const url = await getSignedUrl(el.dataset.path);
+      if (url) window.open(url, "_blank");
+    });
+  });
 }
 
 function backToGate(message) {
@@ -426,6 +506,94 @@ sendForm.addEventListener("submit", async (e) => {
     messageInput.focus();
   }
 });
+
+// ----------------------------------------------------------------------------
+// فويس نوت — عن طريق Web Speech API (تحويل كلام لنص جوه المتصفح نفسه، من
+// غير أي رفع صوت أو تعديل في n8n) — بيتحط النص في خانة الكتابة زي ما هو
+// ونفس مسار الإرسال العادي بيشتغل عليه. مدعومة في Chrome/Edge بس، فبنخفي
+// الزرار تمامًا لو المتصفح مش داعمها بدل ما نعرض حاجة هتفشل.
+// ----------------------------------------------------------------------------
+const SpeechRecognitionImpl = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null;
+let isRecording = false;
+
+if (SpeechRecognitionImpl && micBtn) {
+  micBtn.hidden = false;
+  recognizer = new SpeechRecognitionImpl();
+  recognizer.lang = "ar-EG";
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 1;
+
+  recognizer.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    messageInput.value = messageInput.value ? `${messageInput.value} ${transcript}` : transcript;
+  };
+  recognizer.onerror = () => {
+    isRecording = false;
+    micBtn.classList.remove("recording");
+  };
+  recognizer.onend = () => {
+    isRecording = false;
+    micBtn.classList.remove("recording");
+  };
+
+  micBtn.addEventListener("click", () => {
+    if (isRecording) {
+      recognizer.stop();
+      return;
+    }
+    isRecording = true;
+    micBtn.classList.add("recording");
+    try {
+      recognizer.start();
+    } catch (_) {
+      isRecording = false;
+      micBtn.classList.remove("recording");
+    }
+  });
+} else if (micBtn) {
+  micBtn.hidden = true;
+}
+
+// ----------------------------------------------------------------------------
+// إرفاق صورة/مستند — رفع لـ Storage ثم تسجيله عن طريق webhook n8n (بيتحط على
+// كارت المريض تلقائي من جوه الدالة نفسها في السيرفر).
+// ----------------------------------------------------------------------------
+if (attachBtn && attachInput) {
+  attachBtn.addEventListener("click", () => attachInput.click());
+
+  attachInput.addEventListener("change", async () => {
+    const file = attachInput.files && attachInput.files[0];
+    attachInput.value = ""; // يسمح باختيار نفس الملف تاني لو احتاج
+    if (!file || !activeCode) return;
+
+    const MAX_BYTES = 15 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      chatMessages.insertAdjacentHTML(
+        "beforeend",
+        '<div class="send-error">الملف كبير أكتر من اللازم (الحد الأقصى 15 ميجا).</div>'
+      );
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return;
+    }
+
+    const kind = file.type.startsWith("image/") ? "photo" : "document";
+    attachBtn.disabled = true;
+    try {
+      const path = await uploadToStorage(file, activeCode);
+      await sendAttachment(activeCode, path, kind, file.name);
+      if (pollController) pollController.pollNow();
+    } catch (_) {
+      chatMessages.insertAdjacentHTML(
+        "beforeend",
+        '<div class="send-error">تعذّر رفع الملف، جرّب تاني.</div>'
+      );
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    } finally {
+      attachBtn.disabled = false;
+    }
+  });
+}
 
 // ----------------------------------------------------------------------------
 // نقطة البداية — QR code (?code=...) أو كود محفوظ من الجلسة الحالية أو شاشة فاضية
