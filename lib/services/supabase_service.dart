@@ -815,11 +815,11 @@ class SupabaseService {
   }
 
   /// المحادثة الكاملة (مريض/AI/طبيب) لتصعيد معيّن.
-  Future<List<PortalMessage>> portalThread({
+  Future<({List<PortalMessage> messages, bool aiPaused})> portalThread({
     required String entryCode,
     required String encounterId,
   }) async {
-    if (AppConfig.useMockData || _client == null) return [];
+    if (AppConfig.useMockData || _client == null) return (messages: <PortalMessage>[], aiPaused: false);
     final result = await _client.rpc(
       AppConfig.rpcPortalThread,
       params: {
@@ -829,8 +829,31 @@ class SupabaseService {
         'p_encounter_id': encounterId,
       },
     );
-    final messages = (result as Map<String, dynamic>)['messages'] as List<dynamic>? ?? [];
-    return messages.map((e) => PortalMessage.fromJson(e as Map<String, dynamic>)).toList();
+    final map = result as Map<String, dynamic>;
+    final messages = (map['messages'] as List<dynamic>? ?? [])
+        .map((e) => PortalMessage.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (messages: messages, aiPaused: map['ai_paused'] == true);
+  }
+
+  /// تشغيل/إيقاف الـ AI لزيارة معيّنة (handoff) — الدكتور بيتولى الرد بنفسه
+  /// مباشرة لحد ما يشغّله تاني.
+  Future<void> setPortalAiPaused({
+    required String entryCode,
+    required String encounterId,
+    required bool paused,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcSetPortalAiPaused,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': _portalBotKey,
+        'p_chat_id': entryCode,
+        'p_encounter_id': encounterId,
+        'p_paused': paused,
+      },
+    );
   }
 
   /// رد الطبيب على تصعيد — رسالة نصية بترجع للمريض عن طريق البورتال (مفيش

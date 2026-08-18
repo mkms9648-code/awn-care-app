@@ -162,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _NavTab(
           icon: Icons.support_agent_outlined,
           selectedIcon: Icons.support_agent,
-          label: 'المساعد',
+          label: 'Assistant',
           screen: PortalInboxScreen(provider: _portalInboxProvider!),
         ),
       if (_analyticsProvider != null)

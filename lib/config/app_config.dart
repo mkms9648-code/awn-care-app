@@ -78,6 +78,7 @@ class AppConfig {
   static const String rpcPortalInbox = 'app_portal_inbox';
   static const String rpcPortalThread = 'app_portal_thread';
   static const String rpcPortalReply = 'app_portal_reply';
+  static const String rpcSetPortalAiPaused = 'app_portal_set_ai_paused';
   static const String rpcPortalResolve = 'app_portal_resolve';
   static const String rpcRegisterPushToken = 'app_register_push_token';
 }

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/portal_message.dart';
+import '../services/chat_service.dart';
 import '../theme/app_theme.dart';
+import 'zoomable_attachment_image.dart';
 
 final _timeFmt = DateFormat('h:mm a');
 
-/// فقاعة رسالة بسيطة لمحادثة البورتال (مريض/AI/طبيب) — نص عادي بس، من غير
-/// أي حاجة من ChatBubble (رسايل صوتية/صور/كارت مراجعة) لأنها مش موجودة هنا
-/// أصلًا. الطبيب على اليمين زي أي رسالة "مني"، والمريض والـ AI على الشمال
+/// فقاعة رسالة لمحادثة البورتال (مريض/AI/طبيب) — نص، وممكن كمان مرفق صورة
+/// (ZoomableAttachmentImage نفس المستخدمة في ChatBubble) أو مستند (رابط قابل
+/// للفتح). الطبيب على اليمين زي أي رسالة "مني"، والمريض والـ AI على الشمال
 /// بلونين مختلفين عشان تتفرق بصريًا مين اللي بيتكلم.
 class PortalMessageBubble extends StatelessWidget {
   const PortalMessageBubble({super.key, required this.message});
@@ -72,6 +76,29 @@ class PortalMessageBubble extends StatelessWidget {
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.primaryBlue),
                     ),
                   ],
+                ),
+              ),
+            if (message.hasImageAttachment)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: ZoomableAttachmentImage(storagePath: message.attachmentStoragePath!, size: 160),
+              )
+            else if (message.hasDocAttachment)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: InkWell(
+                  onTap: () async {
+                    final url = await context.read<ChatService>().getSignedUrl(message.attachmentStoragePath!);
+                    if (url != null) await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.description_outlined, size: 16, color: textColor),
+                      const SizedBox(width: 4),
+                      Text('Open document', style: TextStyle(color: textColor, decoration: TextDecoration.underline)),
+                    ],
+                  ),
                 ),
               ),
             Text(message.body, style: TextStyle(color: textColor)),

@@ -31,6 +31,7 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
   bool _loading = true;
   String? _error;
   bool _actionInProgress = false;
+  bool _aiPaused = false;
 
   @override
   void initState() {
@@ -64,11 +65,16 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
     });
     try {
       final auth = context.read<AuthProvider>();
-      final messages = await context.read<SupabaseService>().portalThread(
+      final result = await context.read<SupabaseService>().portalThread(
             entryCode: auth.entryCode!,
             encounterId: widget.escalation.encounterId,
           );
-      if (mounted) setState(() => _messages = messages);
+      if (mounted) {
+        setState(() {
+          _messages = result.messages;
+          _aiPaused = result.aiPaused;
+        });
+      }
       _scrollToBottom();
     } catch (e) {
       if (mounted) setState(() => _error = describeError(e));
@@ -137,6 +143,39 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
     }
   }
 
+  /// Handoff — إيقاف الـ AI عن الرد على المريض عشان الدكتور يتولى مباشرة،
+  /// أو رجّعه تاني لما يخلص. حالة على مستوى الزيارة كلها مش تصعيد واحد بس.
+  Future<void> _toggleAiPaused() async {
+    final next = !_aiPaused;
+    setState(() => _actionInProgress = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      await context.read<SupabaseService>().setPortalAiPaused(
+            entryCode: auth.entryCode!,
+            encounterId: widget.escalation.encounterId,
+            paused: next,
+          );
+      if (mounted) {
+        setState(() => _aiPaused = next);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next
+                ? 'AI paused — you\'re handling this patient directly now.'
+                : 'AI resumed for this patient.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
+  }
+
   Future<void> _callPatient() async {
     final phone = widget.escalation.patientPhone;
     if (phone == null || phone.trim().isEmpty) {
@@ -160,7 +199,27 @@ class _PortalThreadScreenState extends State<PortalThreadScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(e.ticket != null ? '${e.patientName} — #${e.ticket}' : e.patientName),
+        bottom: _aiPaused
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(28),
+                child: Container(
+                  width: double.infinity,
+                  color: AppTheme.accentOrange,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: const Text(
+                    'AI paused — you are handling this patient directly',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              )
+            : null,
         actions: [
+          IconButton(
+            icon: Icon(_aiPaused ? Icons.smart_toy : Icons.smart_toy_outlined),
+            tooltip: _aiPaused ? 'Resume AI' : 'Take over (pause AI)',
+            onPressed: _actionInProgress ? null : _toggleAiPaused,
+          ),
           IconButton(
             icon: const Icon(Icons.call_outlined),
             tooltip: 'Call patient',
