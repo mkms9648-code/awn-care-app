@@ -33,6 +33,11 @@
 
 * { box-sizing: border-box; }
 
+/* .gate-wrap/.chat-wrap بيحطوا display:flex بشكل غير مشروط تحت — ده بيغلب
+   قاعدة المتصفح الافتراضية لـ [hidden] (display:none)، فلازم نأكّدها هنا
+   صراحة وإلا الشاشتين يفضلوا ظاهرين مع بعض في نفس الوقت. */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
