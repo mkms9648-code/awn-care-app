@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../config/app_config.dart';
 import '../models/chat_message.dart';
+import '../models/nurse_task.dart';
 import '../models/patient_summary.dart';
 import '../models/portal_escalation.dart';
 import '../models/unit_info.dart';
@@ -1965,6 +1967,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       _orderActionLine('Ordered', o.orderedBy, o.orderedAt),
       if (o.isCompleted) _orderActionLine('Done', o.resolvedBy, o.resolvedAt),
       if (o.isCancelled) _orderActionLine('Cancelled', o.resolvedBy, o.resolvedAt),
+      if (o.hasNurseTask) 'Assigned: ${o.assignedTo ?? '—'} · ${_taskStatusLabel(o.taskStatus!)}',
     ];
 
     // إجراء اتجاه واحد بس: pending تقدر تعملها done أو تلغيها؛ لما تتعمل done
@@ -2003,6 +2006,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               ),
             if (o.isPending)
               IconButton(
+                icon: Icon(
+                  o.hasNurseTask ? Icons.person : Icons.person_add_alt_outlined,
+                  size: 19,
+                  color: o.hasNurseTask ? AppTheme.primaryBlue : null,
+                ),
+                tooltip: o.hasNurseTask ? 'Reassign nurse' : 'Assign to nurse',
+                onPressed: _actionInProgress ? null : () => _assignNurseToOrder(o),
+              ),
+            if (o.isPending)
+              IconButton(
                 icon: const Icon(Icons.delete_outline, color: AppTheme.criticalRed),
                 tooltip: 'Cancel order',
                 onPressed: _actionInProgress ? null : () => _cancelOrder(o),
@@ -2012,6 +2025,87 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         onTap: o.isPending && !_actionInProgress ? () => _completeOrder(o) : null,
       ),
     );
+  }
+
+  String _taskStatusLabel(String status) {
+    switch (status) {
+      case 'assigned':
+        return 'New';
+      case 'accepted':
+        return 'Accepted';
+      case 'in_progress':
+        return 'In Progress';
+      case 'completed':
+        return 'Done';
+      default:
+        return status;
+    }
+  }
+
+  Future<void> _assignNurseToOrder(OrderInfo o) async {
+    if (_actionInProgress) return;
+    final auth = context.read<AuthProvider>();
+    final supabase = context.read<SupabaseService>();
+
+    List<NurseInfo> nurses;
+    try {
+      nurses = await supabase.listNurses(entryCode: auth.entryCode!, botKey: widget.botKey);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    if (nurses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active nurses in this workspace yet — add one from the admin dashboard.')),
+      );
+      return;
+    }
+
+    final selected = await showDialog<NurseInfo>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Assign to nurse'),
+        children: [
+          for (final n in nurses)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, n),
+              child: Text(n.fullName),
+            ),
+        ],
+      ),
+    );
+    if (selected == null || !mounted) return;
+
+    setState(() => _actionInProgress = true);
+    try {
+      final pushToken = await supabase.assignOrderTask(
+        entryCode: auth.entryCode!,
+        botKey: widget.botKey,
+        orderId: o.id,
+        staffId: selected.staffId,
+      );
+      if (pushToken != null) {
+        unawaited(context.read<ChatService>().sendPushNotification(
+              tokens: [pushToken],
+              title: 'New task assigned',
+              body: '${o.name} — ${_summary?.patient.name ?? ''}',
+            ));
+      }
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(describeError(e)), backgroundColor: AppTheme.criticalRed),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _actionInProgress = false);
+    }
   }
 
   Widget _commitmentTile(Commitment c, ThemeData theme) {

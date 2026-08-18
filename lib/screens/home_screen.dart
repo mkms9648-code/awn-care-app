@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import '../providers/analytics_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/board_provider.dart';
+import '../providers/nurse_task_provider.dart';
 import '../providers/portal_inbox_provider.dart';
 import '../services/supabase_service.dart';
 import 'analytics_screen.dart';
 import 'board_screen.dart';
+import 'nurse_task_list_screen.dart';
 import 'portal_inbox_screen.dart';
 import 'profile_screen.dart';
 
@@ -39,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   BoardProvider? _clinicBoardProvider;
   AnalyticsProvider? _analyticsProvider;
   PortalInboxProvider? _portalInboxProvider;
+  NurseTaskProvider? _nurseTaskProvider;
 
   @override
   void didChangeDependencies() {
@@ -47,9 +50,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_initialized) {
       final auth = context.read<AuthProvider>();
       final entryCode = auth.entryCode!;
+      final supabase = context.read<SupabaseService>();
+
+      // الممرض/ة عندها شاشة مختلفة تمامًا (قايمة مهام + بروفايل بس) — مفيش
+      // بورداتها لا طوارئ ولا راوند ولا عيادة، فمفيش داعي نبني أي حاجة تانية.
+      if (auth.profile?.role == 'nurse') {
+        _nurseTaskProvider = NurseTaskProvider(supabaseService: supabase, entryCode: entryCode);
+        _initialized = true;
+        return;
+      }
+
       final workspaceId = auth.profile?.workspaceId;
       final features = auth.profile?.enabledFeatures ?? const <String>[];
-      final supabase = context.read<SupabaseService>();
 
       // كل تاب/بوت بيظهر بس لو الدكتور فعليًا مشترك فيه — لا داعي نعرض تاب
       // مفيهوش حاجة أو هيرجع خطأ صلاحيات لمجرد إنه مش جزء من اشتراكه.
@@ -115,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _clinicBoardProvider?.dispose();
     _analyticsProvider?.dispose();
     _portalInboxProvider?.dispose();
+    _nurseTaskProvider?.dispose();
     super.dispose();
   }
 
@@ -122,6 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     if (!_initialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_nurseTaskProvider != null) {
+      return _buildNurseShell();
     }
 
     final tabs = <_NavTab>[
@@ -197,6 +214,29 @@ class _HomeScreenState extends State<HomeScreen> {
               selectedIcon: Icon(t.selectedIcon),
               label: t.label,
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNurseShell() {
+    final screens = [
+      ChangeNotifierProvider<NurseTaskProvider>.value(
+        value: _nurseTaskProvider!,
+        child: const NurseTaskListScreen(),
+      ),
+      const ProfileScreen(),
+    ];
+    final currentIndex = _currentIndex.clamp(0, screens.length - 1);
+
+    return Scaffold(
+      body: IndexedStack(index: currentIndex, children: screens),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (i) => setState(() => _currentIndex = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.assignment_outlined), selectedIcon: Icon(Icons.assignment), label: 'Tasks'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

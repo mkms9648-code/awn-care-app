@@ -149,6 +149,8 @@ class OrderInfo {
     required this.resolvedAt,
     required this.resolvedBy,
     this.eventId,
+    this.assignedTo,
+    this.taskStatus,
   });
 
   final String id;
@@ -160,10 +162,13 @@ class OrderInfo {
   final DateTime? resolvedAt;
   final String? resolvedBy;
   final String? eventId;
+  final String? assignedTo;
+  final String? taskStatus; // assigned | accepted | in_progress | completed | null
 
   bool get isPending => status == 'pending';
   bool get isCompleted => status == 'completed';
   bool get isCancelled => status == 'cancelled';
+  bool get hasNurseTask => taskStatus != null;
 
   factory OrderInfo.fromJson(Map<String, dynamic> json) {
     return OrderInfo(
@@ -176,6 +181,8 @@ class OrderInfo {
       resolvedAt: DateTime.tryParse(json['resolved_at']?.toString() ?? '')?.toLocal(),
       resolvedBy: json['resolved_by']?.toString(),
       eventId: json['event_id']?.toString(),
+      assignedTo: json['assigned_to']?.toString(),
+      taskStatus: json['task_status']?.toString(),
     );
   }
 }

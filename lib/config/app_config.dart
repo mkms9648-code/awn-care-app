@@ -56,6 +56,14 @@ class AppConfig {
     defaultValue: 'https://www.awnagent.com/care/patient/',
   );
 
+  /// نفس ويب-هوك إرسال الإشعارات اللي لوحة التحكم بتستخدمه — بياخد
+  /// {push_tokens[], title, body}. بيُستخدم هنا لما الدكتور يعيّن مهمة لممرض/ة
+  /// مباشرة (بدون n8n وسيط، مفيش خطوة AI في المسار ده أصلًا).
+  static const String pushWebhookUrl = String.fromEnvironment(
+    'PUSH_WEBHOOK_URL',
+    defaultValue: 'https://n8n-c1bz.srv1841520.hstgr.cloud/webhook/send-notification-push',
+  );
+
   static const String attachmentsBucket = 'attachments';
 
   /// RPC function names — must match existing Postgres functions exactly.
@@ -92,4 +100,10 @@ class AppConfig {
   static const String rpcPlanUsage = 'app_plan_usage';
   static const String rpcNotificationsList = 'app_notifications_list';
   static const String rpcNotificationsMarkRead = 'app_notifications_mark_read';
+  static const String rpcNurseTaskList = 'app_nurse_task_list';
+  static const String rpcNurseTaskAccept = 'app_nurse_task_accept';
+  static const String rpcNurseTaskStart = 'app_nurse_task_start';
+  static const String rpcNurseTaskComplete = 'app_nurse_task_complete';
+  static const String rpcAssignOrderTask = 'app_assign_order_task';
+  static const String rpcListNurses = 'app_list_nurses';
 }

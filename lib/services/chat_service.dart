@@ -76,6 +76,27 @@ class ChatService {
     return text;
   }
 
+  /// إرسال push مباشر (بدون n8n وسيط — مفيش خطوة AI في المسار ده أصلًا، زي
+  /// لما الدكتور يعيّن مهمة لممرض/ة). فشل الإرسال ما بيوقفش الإجراء الأساسي.
+  Future<void> sendPushNotification({
+    required List<String> tokens,
+    required String title,
+    required String body,
+  }) async {
+    if (AppConfig.useMockData || tokens.isEmpty) return;
+    try {
+      await _http
+          .post(
+            Uri.parse(AppConfig.pushWebhookUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'push_tokens': tokens, 'title': title, 'body': body}),
+          )
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // الإجراء الأساسي (تعيين المهمة) نجح بالفعل — فشل الـpush مش لازم يبوّظه.
+    }
+  }
+
   Future<WebhookResponse> sendMessage({
     required String entryCode,
     required ChatBotKey botKey,

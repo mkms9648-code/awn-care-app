@@ -1,0 +1,124 @@
+/* أسعار عون كير — ملحوظة: الأرقام هنا ثابتة (static)، لازم تتحدث يدويًا لو
+   اتغيّرت من صفحة «الباقات» في لوحة التحكم. مفيش نداء حي للـAPI هنا عمدًا —
+   موقع تسويقي بسيط مطابق لنفس نمط صفحة بوابة المريض (بدون build tool). */
+
+:root {
+  --primary: #3B6FF2;
+  --primary-light: #5B8DFF;
+  --accent: #E65100;
+  --critical: #C62828;
+  --success: #2E7D32;
+  --ink: #10162B;
+  --ink-2: #4A5270;
+  --paper: #F4F7FC;
+  --white: #FFFFFF;
+  --rule: #E3E8F3;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "IBM Plex Sans Arabic", "Segoe UI", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.7;
+}
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; }
+ul { margin: 0; padding-inline-start: 20px; }
+li { margin-bottom: 6px; font-size: .92em; color: var(--ink-2); }
+
+/* ---- Hero ---- */
+.hero {
+  background: linear-gradient(160deg, var(--primary) 0%, #2450C7 100%);
+  color: #fff;
+  padding: 48px 0 64px;
+  text-align: center;
+}
+.brand { font-weight: 800; font-size: 1.1em; margin-bottom: 18px; opacity: .9; }
+.brand span { color: #FFD180; }
+.hero h1 { font-size: 2em; margin: 0 0 14px; font-weight: 800; }
+.hero .lead { font-size: 1.05em; max-width: 560px; margin: 0 auto 8px; opacity: .95; }
+.hero .sub { font-size: .88em; max-width: 560px; margin: 0 auto; opacity: .8; }
+
+/* ---- Tabs ---- */
+.tabs { display: flex; gap: 10px; justify-content: center; margin: -28px auto 30px; padding-top: 0; flex-wrap: wrap; }
+.tab {
+  background: #fff; border: 1.5px solid var(--rule); border-radius: 100px;
+  padding: 12px 22px; font-family: inherit; font-size: .95em; font-weight: 700;
+  cursor: pointer; box-shadow: 0 4px 14px rgba(20,30,60,.08); color: var(--ink);
+}
+.tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* ---- Panels / cards ---- */
+.panel.hidden { display: none; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card {
+  background: #fff; border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 22px 20px; position: relative; display: flex; flex-direction: column;
+}
+.card.featured { border: 2px solid var(--primary); box-shadow: 0 10px 30px rgba(59,111,242,.16); }
+.badge {
+  position: absolute; top: -12px; inset-inline-start: 20px; background: var(--accent);
+  color: #fff; font-size: .72em; font-weight: 700; padding: 4px 12px; border-radius: 100px;
+}
+.card-h { font-weight: 800; font-size: 1.1em; margin-bottom: 6px; }
+.price { font-size: 1em; color: var(--ink-2); margin-bottom: 10px; }
+.price b { font-size: 1.5em; color: var(--ink); font-weight: 800; }
+.price span { font-size: .8em; }
+.desc { font-size: .85em; color: var(--ink-2); margin: 0 0 14px; }
+.card ul { margin-bottom: 18px; flex: 1; }
+.btn {
+  display: block; text-align: center; padding: 12px; border-radius: 100px;
+  background: var(--paper); color: var(--ink); font-weight: 700; font-size: .92em;
+  border: 1.5px solid var(--rule);
+}
+.btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn.outline { background: #fff; color: var(--primary); border-color: var(--primary); }
+.btn.big { padding: 16px 30px; font-size: 1.05em; display: inline-block; }
+
+/* ---- Follow-up addon ---- */
+.addon {
+  background: #fff; border: 1px dashed var(--primary-light); border-radius: var(--radius);
+  padding: 22px; display: flex; gap: 16px; align-items: flex-start; margin-bottom: 10px;
+}
+.addon-icon { font-size: 2em; }
+.addon-h { font-weight: 800; margin-bottom: 6px; }
+.addon-h span { font-weight: 500; font-size: .75em; color: var(--ink-2); display: block; margin-top: 2px; }
+.addon p { font-size: .88em; color: var(--ink-2); margin: 0 0 14px; }
+.addon .btn { max-width: 240px; }
+
+.note { text-align: center; font-size: .85em; color: var(--ink-2); }
+
+/* ---- Hospital panel ---- */
+.hospital-card { background: #fff; border-radius: var(--radius); padding: 32px; text-align: center; border: 1px solid var(--rule); }
+.hospital-card h2 { margin: 0 0 6px; }
+.flow { color: var(--primary); font-weight: 700; margin-bottom: 20px; }
+.hcols { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 10px; text-align: right; max-width: 640px; margin: 0 auto 26px; }
+.hcols li { background: var(--paper); border-radius: 10px; padding: 10px 14px; }
+.cta-big { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.cta-big > div:first-child { font-weight: 700; color: var(--ink-2); }
+.cta-big .btn { width: auto; padding: 14px 32px; }
+
+/* ---- FAQ ---- */
+.faq { margin: 50px 0; }
+.faq h2 { text-align: center; margin-bottom: 20px; }
+.faq details {
+  background: #fff; border: 1px solid var(--rule); border-radius: 12px;
+  padding: 14px 18px; margin-bottom: 10px;
+}
+.faq summary { cursor: pointer; font-weight: 700; }
+.faq p { margin: 10px 0 0; color: var(--ink-2); font-size: .92em; }
+
+/* ---- Final CTA ---- */
+.finalcta { text-align: center; padding: 40px 0 60px; }
+.finalcta h2 { margin-bottom: 6px; }
+.finalcta p { color: var(--ink-2); margin-bottom: 22px; }
+
+.foot { text-align: center; padding: 24px; color: var(--ink-2); font-size: .82em; }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.5em; }
+  .hcols { grid-template-columns: 1fr; }
+}

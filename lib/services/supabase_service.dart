@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../models/app_notification.dart';
 import '../models/chat_message.dart';
 import '../models/encounter.dart';
+import '../models/nurse_task.dart';
 import '../models/patient_summary.dart';
 import '../models/analytics_summary.dart';
 import '../models/plan_usage.dart';
@@ -998,6 +999,86 @@ class SupabaseService {
         'p_notification_id': notificationId,
       },
     );
+  }
+
+  // ---- الممرض/ة: قايمة المهام + دورة حياتها ----
+
+  Future<List<NurseTask>> nurseTaskList({required String entryCode}) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcNurseTaskList,
+      params: {'p_platform': AppConfig.platform, 'p_bot_key': 'nurse', 'p_chat_id': entryCode},
+    );
+    final list = (result as Map<String, dynamic>)['results'] as List<dynamic>? ?? [];
+    return list.map((e) => NurseTask.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> nurseTaskAccept({required String entryCode, required String orderId}) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcNurseTaskAccept,
+      params: {'p_platform': AppConfig.platform, 'p_bot_key': 'nurse', 'p_chat_id': entryCode, 'p_order_id': orderId},
+    );
+  }
+
+  Future<void> nurseTaskStart({required String entryCode, required String orderId}) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcNurseTaskStart,
+      params: {'p_platform': AppConfig.platform, 'p_bot_key': 'nurse', 'p_chat_id': entryCode, 'p_order_id': orderId},
+    );
+  }
+
+  Future<void> nurseTaskComplete({
+    required String entryCode,
+    required String orderId,
+    String? resultNote,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return;
+    await _client.rpc(
+      AppConfig.rpcNurseTaskComplete,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': 'nurse',
+        'p_chat_id': entryCode,
+        'p_order_id': orderId,
+        if (resultNote != null && resultNote.trim().isNotEmpty) 'p_result_note': resultNote.trim(),
+      },
+    );
+  }
+
+  // ---- الدكتور: تعيين مهمة لممرض/ة + قايمة الممرضين/ات ----
+
+  /// بترجّع توكن الـpush بتاع الممرض/ة (ممكن يكون null) عشان الفلاتر يبعت
+  /// إشعار مباشر — نفس فكرة app_portal_escalate.
+  Future<String?> assignOrderTask({
+    required String entryCode,
+    required String botKey,
+    required String orderId,
+    required String staffId,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return null;
+    final result = await _client.rpc(
+      AppConfig.rpcAssignOrderTask,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': botKey,
+        'p_chat_id': entryCode,
+        'p_order_id': orderId,
+        'p_staff_id': staffId,
+      },
+    );
+    return (result as Map<String, dynamic>)['push_token']?.toString();
+  }
+
+  Future<List<NurseInfo>> listNurses({required String entryCode, required String botKey}) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcListNurses,
+      params: {'p_platform': AppConfig.platform, 'p_bot_key': botKey, 'p_chat_id': entryCode},
+    );
+    final list = (result as Map<String, dynamic>)['results'] as List<dynamic>? ?? [];
+    return list.map((e) => NurseInfo.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   RealtimeChannel? subscribeEncounters({
