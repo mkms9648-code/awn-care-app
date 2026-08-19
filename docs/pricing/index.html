@@ -4,237 +4,299 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>الأسعار — عون كير</title>
-  <meta name="description" content="اختر الباقة المناسبة لطريقة شغلك — عيادة، طوارئ، رعاية داخلية، متابعة المرضى، فرق طبية، أو مستشفيات." />
+  <meta name="description" content="خطط تناسب طريقة عملك — من طبيب واحد إلى مستشفى كاملة." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="https://www.awnagent.com/favicon.svg" />
   <link rel="stylesheet" href="assets/style.css" />
 </head>
-<body>
-  <nav class="navbar">
-    <a class="nav-brand" href="https://www.awnagent.com/care">
-      <img class="mark-img" src="https://www.awnagent.com/sites/care/assets/awn-care-doctor.png" alt="عون كير" />
-      <span class="nav-brand-name">عون <span>كير</span></span>
-    </a>
-    <a class="nav-cta" href="#start"><i class="ti ti-download"></i> ابدأ الآن</a>
-  </nav>
+<body class="lang-ar">
 
-  <header class="hero">
+  <!-- ============================================================ NAVBAR -->
+  <div class="navbar">
+    <div class="nav-brand">
+      <div class="nav-mark">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V6l-8-4z" stroke="#F4F8FC" stroke-width="2" stroke-linejoin="round"/></svg>
+      </div>
+      <span>Awn</span>
+    </div>
+    <div class="nav-links">
+      <a href="#" data-i18n="nav.app"></a>
+      <a href="#" data-i18n="nav.products"></a>
+      <a href="#pricing" class="nav-active" data-i18n="nav.pricing"></a>
+      <a href="#" data-i18n="nav.contact"></a>
+    </div>
+    <div class="nav-right">
+      <div class="lang-switch">
+        <button id="lang-ar" class="lang-btn active" onclick="setLang('ar')">عربي</button>
+        <button id="lang-en" class="lang-btn" onclick="setLang('en')">EN</button>
+      </div>
+      <a href="#start" class="nav-cta" data-i18n="nav.cta"></a>
+    </div>
+  </div>
+
+  <!-- ============================================================ HERO -->
+  <div class="hero">
     <div class="hero-inner">
-      <span class="hero-eyebrow"><i class="ti ti-tag"></i> التسعير</span>
-      <h1 class="hero-h1">اختر الباقة المناسبة <span>لطريقة شغلك</span></h1>
-      <p class="hero-sub">ادفع حسب عدد المرضى اللي بتتعامل معاهم — مش حسب عدد رسايل الـAI أو التسجيلات الصوتية.</p>
-      <p class="hero-sub2">كل باقات الأطباء تشمل الـAI Documentation والـPatient Cards بدون أي حد إضافي على الاستخدام.</p>
-      <div class="hero-actions">
-        <a class="btn-primary" href="#start"><i class="ti ti-rocket"></i> ابدأ الآن</a>
-        <a class="btn-ghost" href="https://www.awnagent.com/care">شوف عون كير كامل <i class="ti ti-arrow-left"></i></a>
+      <h1><span class="accent" data-i18n="hero.titleAccent"></span> <span data-i18n="hero.titleRest"></span></h1>
+      <p class="hero-sub" data-i18n="hero.sub"></p>
+      <div class="value-props">
+        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="#3BA7FF" stroke-width="1.7"/><path d="M8 11V7a4 4 0 018 0v4" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="hero.value1"></span></div>
+        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#3BA7FF" stroke-width="1.7"/><path d="M9 12l2 2 4-4" stroke="#3BA7FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hero.value2"></span></div>
+        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#3BA7FF" stroke-width="1.7"/><path d="M3 10h18" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="hero.value3"></span></div>
       </div>
     </div>
-  </header>
+  </div>
 
-  <nav class="tabs" id="tabs">
-    <button class="tab active" data-t="doctors"><i class="ti ti-stethoscope"></i> للأطباء</button>
-    <button class="tab" data-t="teams"><i class="ti ti-users"></i> للفرق الطبية</button>
-    <button class="tab" data-t="hospitals"><i class="ti ti-building-hospital"></i> للمستشفيات</button>
-  </nav>
+  <!-- ============================================================ REGION SELECTOR -->
+  <div class="region-sec" id="pricing">
+    <div class="region-title" data-i18n="region.title"></div>
+    <div class="region-grid">
+      <button class="region-card" id="region-egypt" onclick="setRegion('egypt')">
+        <svg class="region-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke-width="1.7"/></svg>
+        <span class="region-label" data-i18n="region.egypt"></span>
+        <span class="region-sub" data-i18n="region.egyptSub"></span>
+      </button>
+      <button class="region-card" id="region-arab" onclick="setRegion('arab')">
+        <svg class="region-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18l6-13 4 8 3-5 3 10H4z" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span class="region-label" data-i18n="region.arab"></span>
+        <span class="region-sub" data-i18n="region.arabSub"></span>
+      </button>
+      <button class="region-card" id="region-global" onclick="setRegion('global')">
+        <svg class="region-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke-width="1.7"/><path d="M3.5 12h17M12 3.5c2.3 2.3 3.5 5.2 3.5 8.5s-1.2 6.2-3.5 8.5c-2.3-2.3-3.5-5.2-3.5-8.5S9.7 5.8 12 3.5z" stroke-width="1.5"/></svg>
+        <span class="region-label" data-i18n="region.global"></span>
+        <span class="region-sub" data-i18n="region.globalSub"></span>
+      </button>
+    </div>
 
-  <main>
-    <!-- ===== الأطباء ===== -->
-    <section class="section" id="panel-doctors">
-      <div class="section-inner">
-        <div class="grid">
-          <div class="card">
-            <div class="card-icon"><i class="ti ti-building-hospital"></i></div>
-            <div class="card-h">Clinic</div>
-            <div class="price">من <b>999</b> جنيه<span>/شهر</span></div>
-            <p class="desc">للدكاترة اللي شغلهم الأساسي عيادات ومتابعات.</p>
-            <ul>
-              <li><i class="ti ti-check"></i> 100 Patient Cards</li>
-              <li><i class="ti ti-check"></i> تسجيل بالصوت أو الكتابة</li>
-              <li><i class="ti ti-check"></i> AI يحول كلامك لبيانات طبية منظمة</li>
-              <li><i class="ti ti-check"></i> Patient History + Attachments</li>
-              <li><i class="ti ti-check"></i> Prescription + PDF</li>
-              <li><i class="ti ti-check"></i> تقارير أساسية</li>
-            </ul>
-            <a class="btn-card" href="#start">ابدأ الآن</a>
-          </div>
+    <div class="billing-row">
+      <span class="billing-label active" id="label-monthly" data-i18n="billing.monthly"></span>
+      <button class="billing-toggle" id="billing-toggle" onclick="toggleBilling()"><span class="toggle-knob" id="toggle-knob"></span></button>
+      <span class="billing-label" id="label-yearly" data-i18n="billing.yearly"></span>
+    </div>
+    <div class="billing-save" data-i18n="billing.save"></div>
+  </div>
 
-          <div class="card">
-            <div class="card-icon accent-red"><i class="ti ti-ambulance"></i></div>
-            <div class="card-h">Emergency</div>
-            <div class="price">من <b>1,499</b> جنيه<span>/شهر</span></div>
-            <p class="desc">للدكاترة اللي بيشتغلوا في الطوارئ.</p>
-            <ul>
-              <li><i class="ti ti-check"></i> 100 Patient Cards</li>
-              <li><i class="ti ti-check"></i> Emergency Documentation</li>
-              <li><i class="ti ti-check"></i> Vital Signs + Medical History</li>
-              <li><i class="ti ti-check"></i> Orders + Attachments</li>
-              <li><i class="ti ti-check"></i> Admission / Discharge / Transfer</li>
-              <li><i class="ti ti-check"></i> تقارير الطوارئ</li>
-            </ul>
-            <a class="btn-card" href="#start">ابدأ الآن</a>
-          </div>
+  <!-- ============================================================ INDIVIDUAL DOCTORS -->
+  <div class="doctors-sec">
+    <div class="doctors-inner">
+      <div class="sec-title" data-i18n="doctors.title"></div>
+      <div class="doctors-grid">
 
-          <div class="card">
-            <div class="card-icon accent-purple"><i class="ti ti-bed"></i></div>
-            <div class="card-h">Inpatient</div>
-            <div class="price">من <b>1,499</b> جنيه<span>/شهر</span></div>
-            <p class="desc">لإدارة ومتابعة المرضى المحجوزين.</p>
-            <ul>
-              <li><i class="ti ti-check"></i> حتى 50 Active Patients</li>
-              <li><i class="ti ti-check"></i> Daily Rounds + Vital Signs</li>
-              <li><i class="ti ti-check"></i> Orders + Lab Results</li>
-              <li><i class="ti ti-check"></i> Treatment Plan + Doctor Notes</li>
-              <li><i class="ti ti-check"></i> Patient Timeline</li>
-              <li><i class="ti ti-check"></i> Discharge</li>
-            </ul>
-            <a class="btn-card" href="#start">ابدأ الآن</a>
-          </div>
-
-          <div class="card featured">
-            <div class="badge">الأكثر اختيارًا</div>
-            <div class="card-icon"><i class="ti ti-sparkles"></i></div>
-            <div class="card-h">Doctor Pro</div>
-            <div class="price"><b>2,999</b> جنيه<span>/شهر</span></div>
-            <p class="desc">كل أدوات الدكتور في مكان واحد — Clinic + Emergency + Inpatient.</p>
-            <ul>
-              <li><i class="ti ti-check"></i> كل الموديولات التلاتة سوا</li>
-              <li><i class="ti ti-check"></i> AI Medical Documentation + Voice</li>
-              <li><i class="ti ti-check"></i> Patient Cards + Transfer</li>
-              <li><i class="ti ti-check"></i> Reports + Prescription PDF</li>
-              <li><i class="ti ti-check"></i> Patient Timeline + Basic Analytics</li>
-            </ul>
-            <a class="btn-card primary" href="#start">ابدأ الآن</a>
-          </div>
-        </div>
-
-        <div class="addon">
-          <div class="addon-icon"><i class="ti ti-message-heart"></i></div>
-          <div class="addon-body">
-            <div class="addon-h">Patient Follow-up <span>من 499 جنيه/شهر — إضافة على أي باقة</span></div>
-            <p>خلي المريض يتواصل معاك بدون مكالمات ورسائل عشوائية. بعد الزيارة، المريض يمسح QR على الروشتة ويدخل شات خاص بحالته — يشرح شكواه، يبعت صور وتحاليل، ويتابع معاك. وانت تستقبل إشعار فوري بالحالة كاملة، من غير ما تدّي رقمك الشخصي لحد.</p>
-            <a class="btn-card outline" href="#start">أضف Patient Follow-up</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== الفرق الطبية ===== -->
-    <section class="section hidden" id="panel-teams">
-      <div class="section-inner">
-        <div class="grid">
-          <div class="card">
-            <div class="card-icon"><i class="ti ti-users"></i></div>
-            <div class="card-h">Team 3</div>
-            <div class="price"><b>5,999</b> جنيه<span>/شهر</span></div>
-            <ul><li><i class="ti ti-check"></i> حتى 3 دكاترة</li><li><i class="ti ti-check"></i> 500 Patient Cards مشتركة</li></ul>
-            <a class="btn-card" href="#start">ابدأ الآن</a>
-          </div>
-          <div class="card">
-            <div class="card-icon"><i class="ti ti-users"></i></div>
-            <div class="card-h">Team 5</div>
-            <div class="price"><b>8,999</b> جنيه<span>/شهر</span></div>
-            <ul><li><i class="ti ti-check"></i> حتى 5 دكاترة</li><li><i class="ti ti-check"></i> 1,000 Patient Cards مشتركة</li></ul>
-            <a class="btn-card" href="#start">ابدأ الآن</a>
-          </div>
-          <div class="card featured">
-            <div class="badge">الأكثر شيوعًا</div>
-            <div class="card-icon"><i class="ti ti-users"></i></div>
-            <div class="card-h">Team 10</div>
-            <div class="price"><b>14,999</b> جنيه<span>/شهر</span></div>
-            <ul><li><i class="ti ti-check"></i> حتى 10 دكاترة</li><li><i class="ti ti-check"></i> 2,000 Patient Cards مشتركة</li></ul>
-            <a class="btn-card primary" href="#start">ابدأ الآن</a>
-          </div>
-          <div class="card">
-            <div class="card-icon"><i class="ti ti-users"></i></div>
-            <div class="card-h">Team 20</div>
-            <div class="price"><b>24,999</b> جنيه<span>/شهر</span></div>
-            <ul><li><i class="ti ti-check"></i> حتى 20 دكتور</li><li><i class="ti ti-check"></i> 5,000 Patient Cards مشتركة</li></ul>
-            <a class="btn-card" href="#start">ابدأ الآن</a>
-          </div>
-        </div>
-        <p class="note">كل دكتور له Account خاص به، وكل الـPatient Data متاحة للفريق حسب الصلاحيات — Handover + Department Assignment + Activity Log.</p>
-      </div>
-    </section>
-
-    <!-- ===== المستشفيات ===== -->
-    <section class="section hidden dark-bg" id="panel-hospitals">
-      <div class="section-inner">
-        <div class="hospital-card">
-          <span class="section-tag on-dark"><i class="ti ti-building-hospital"></i> للمستشفيات</span>
-          <h2 class="hospital-h">نظام واحد لإدارة رحلة المريض بالكامل</h2>
-          <p class="flow">Emergency → Inpatient → Clinics → Discharge → Follow-up</p>
-          <ul class="hcols">
-            <li><i class="ti ti-check"></i> Multiple Doctors + Departments</li>
-            <li><i class="ti ti-check"></i> Patient Transfer + Shared Records</li>
-            <li><i class="ti ti-check"></i> Doctor &amp; Nurse Accounts + Permissions</li>
-            <li><i class="ti ti-check"></i> Management Dashboard + Analytics</li>
-            <li><i class="ti ti-check"></i> Department &amp; Doctor Performance</li>
-            <li><i class="ti ti-check"></i> Patient Follow-up + Advanced Reporting</li>
+        <div class="plan-card">
+          <div class="plan-cards-badge" data-i18n="doctors.cardsClinic"></div>
+          <div class="plan-name" data-i18n="doctors.clinicName"></div>
+          <div class="plan-price" id="price-clinic"></div>
+          <div class="plan-permo" data-i18n="perMonth"></div>
+          <ul class="plan-features">
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF5"></span></li>
           </ul>
-          <div class="cta-big">
-            <div>حلول مخصصة حسب حجم المستشفى</div>
-            <a class="btn-primary" href="#start">تواصل مع فريق المبيعات</a>
+          <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-cards-badge" data-i18n="doctors.cardsEmergency"></div>
+          <div class="plan-name" data-i18n="doctors.emergencyName"></div>
+          <div class="plan-price" id="price-emergency"></div>
+          <div class="plan-permo" data-i18n="perMonth"></div>
+          <ul class="plan-features">
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF5"></span></li>
+          </ul>
+          <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-cards-badge" data-i18n="doctors.cardsInpatient"></div>
+          <div class="plan-name" data-i18n="doctors.inpatientName"></div>
+          <div class="plan-price" id="price-inpatient"></div>
+          <div class="plan-permo" data-i18n="perMonth"></div>
+          <ul class="plan-features">
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF5"></span></li>
+          </ul>
+          <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+        </div>
+
+        <div class="plan-card plan-pro">
+          <div class="plan-badge" data-i18n="doctors.badge"></div>
+          <div class="plan-cards-badge pro" data-i18n="doctors.proTagline"></div>
+          <div class="plan-name pro" data-i18n="doctors.proName"></div>
+          <div class="plan-price pro" id="price-pro"></div>
+          <div class="plan-permo" data-i18n="perMonth"></div>
+          <ul class="plan-features pro">
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF5"></span></li>
+          </ul>
+          <a href="#start" class="plan-cta primary" data-i18n="doctors.cta"></a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ PATIENT FOLLOW-UP -->
+  <div class="followup-sec">
+    <div class="followup-card">
+      <div class="followup-flow" id="followup-flow">
+        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4V4z" stroke="#3BA7FF" stroke-width="1.6"/><path d="M9 4v6M4 9h6M15 4v3M15 15h5M19 4v6M4 15h5M4 19h5M15 19h5" stroke="#3BA7FF" stroke-width="1.6" stroke-linecap="round"/></svg></div><span data-i18n="followup.step1"></span></div>
+        <svg class="flow-arrow" width="20" height="9" viewBox="0 0 20 9"><path d="M0 4.5h17M13 1l4 3.5-4 3.5" stroke="rgba(255,255,255,0.2)" stroke-width="1.4" fill="none"/></svg>
+        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 5h16a1 1 0 011 1v9a1 1 0 01-1 1H9l-5 4V6a1 1 0 011-1z" stroke="#3BA7FF" stroke-width="1.6" stroke-linejoin="round"/></svg></div><span data-i18n="followup.step2"></span></div>
+        <svg class="flow-arrow" width="20" height="9" viewBox="0 0 20 9"><path d="M0 4.5h17M13 1l4 3.5-4 3.5" stroke="rgba(255,255,255,0.2)" stroke-width="1.4" fill="none"/></svg>
+        <div class="flow-node"><div class="flow-icon active"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.9L19 9.5l-4.9 1.8L12.3 16l-1.8-4.9L5.5 9.3l4.9-1.8L12 3z" stroke="#3BA7FF" stroke-width="1.5" stroke-linejoin="round"/></svg></div><span data-i18n="followup.step3"></span></div>
+        <svg class="flow-arrow" width="20" height="9" viewBox="0 0 20 9"><path d="M0 4.5h17M13 1l4 3.5-4 3.5" stroke="rgba(255,255,255,0.2)" stroke-width="1.4" fill="none"/></svg>
+        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="#3BA7FF" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="#3BA7FF" stroke-width="1.6"/></svg></div><span data-i18n="followup.step4"></span></div>
+      </div>
+      <div class="followup-copy">
+        <div class="followup-title" data-i18n="followup.title"></div>
+        <p class="followup-desc" data-i18n="followup.desc"></p>
+        <div class="followup-bottom">
+          <div><span class="followup-price" id="price-followup"></span><span class="followup-permo" data-i18n="perMonth"></span></div>
+          <a href="#start" class="followup-cta" data-i18n="followup.cta"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ TEAMS + HOSPITAL -->
+  <div class="teams-hospital-sec">
+    <div class="th-grid">
+
+      <div>
+        <div class="sec-title" data-i18n="teams.title"></div>
+        <div class="teams-grid">
+          <div class="team-card">
+            <div class="team-name" data-i18n="teams.team5"></div>
+            <div class="team-price" id="price-team5"></div>
+            <div class="plan-permo" data-i18n="perMonth"></div>
+            <ul class="team-features">
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team5F1"></span></li>
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team5F2"></span></li>
+            </ul>
+            <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+          </div>
+          <div class="team-card">
+            <div class="team-name" data-i18n="teams.team10"></div>
+            <div class="team-price" id="price-team10"></div>
+            <div class="plan-permo" data-i18n="perMonth"></div>
+            <ul class="team-features">
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team10F1"></span></li>
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team10F2"></span></li>
+            </ul>
+            <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+          </div>
+        </div>
+        <div class="teams-note" data-i18n="teams.note"></div>
+      </div>
+
+      <div class="hospital-card">
+        <div class="hospital-inner">
+          <div class="hospital-left">
+            <div class="hospital-title" data-i18n="hospital.title"></div>
+            <p class="hospital-sub" data-i18n="hospital.sub"></p>
+            <div class="hospital-wf">
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#3BA7FF" stroke-width="1.8"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" stroke="#3BA7FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf1"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#3BA7FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf2"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3 8-8" stroke="#3BA7FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9" stroke="#3BA7FF" stroke-width="1.8" stroke-linecap="round"/></svg></span><span data-i18n="hospital.wf3"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="3.2" stroke="#3BA7FF" stroke-width="1.8"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#3BA7FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf4"></span></div>
+              <div class="wf-row"><span class="wf-icon accent"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="hospital.wf5"></span></div>
+            </div>
+            <a href="#start" class="plan-cta primary" data-i18n="hospital.cta"></a>
+          </div>
+          <div class="hospital-right">
+            <div class="hospital-plan-name" data-i18n="hospital.planName"></div>
+            <div class="hospital-price" id="price-hospital"></div>
+            <div class="plan-permo" data-i18n="perMonth"></div>
+            <ul class="hospital-features">
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat1"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat2"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat3"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat4"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat5"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat6"></span></li>
+            </ul>
           </div>
         </div>
       </div>
-    </section>
 
-    <!-- ===== الأسئلة الشائعة ===== -->
-    <section class="section faq-bg">
-      <div class="section-inner">
-        <span class="section-tag"><i class="ti ti-help-circle"></i> أسئلة شائعة</span>
-        <h2 class="section-h2">محتاج تعرف كام حاجة قبل ما تبدأ؟</h2>
-
-        <div class="faq-list">
-          <details>
-            <summary>هل الـAI له حد استخدام؟<i class="ti ti-chevron-down"></i></summary>
-            <p>لا تحتاج لمتابعة عدد رسايل الـAI أو التسجيلات الصوتية. الوحدة المحاسبية عندنا هي Patient Card مش عدد الرسايل — استخدم الـAI براحتك داخل حدود باقتك.</p>
-          </details>
-          <details>
-            <summary>ما المقصود بـPatient Card؟<i class="ti ti-chevron-down"></i></summary>
-            <p>Patient Card هي ملف المريض داخل النظام بكل معلوماته وتحديثاته.</p>
-          </details>
-          <details>
-            <summary>لو المريض انتقل من الطوارئ إلى القسم، هل يتحسب كارت جديد؟<i class="ti ti-chevron-down"></i></summary>
-            <p>لا. المريض ينتقل بملفه نفسه من Emergency إلى Inpatient، وتفضل بياناته متصلة — نفس الـPatient Episode.</p>
-          </details>
-          <details>
-            <summary>هل أحتاج أدفع لكل دكتور؟<i class="ti ti-chevron-down"></i></summary>
-            <p>الباقة الفردية لدكتور واحد. أما الفرق والمستشفيات، فلكل دكتور Account خاص به ضمن خطة الفريق أو المؤسسة.</p>
-          </details>
-          <details>
-            <summary>هل يمكنني إضافة Patient Follow-up لاحقًا؟<i class="ti ti-chevron-down"></i></summary>
-            <p>نعم، متاح كإضافة مستقلة على أي باقة وتقدر تفعّله في أي وقت.</p>
-          </details>
-          <details>
-            <summary>هل بيانات التسجيلات الصوتية تظل محفوظة؟<i class="ti ti-chevron-down"></i></summary>
-            <p>لا. بعد نجاح تحويل الصوت لنص ومعالجة البيانات، يتم حذف التسجيل من التخزين المؤقت.</p>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <section class="final-cta" id="start">
-      <div class="final-cta-inner">
-        <h2>جاهز <span>تبدأ؟</span></h2>
-        <p>نزّل التطبيق، اعمل حساب، واختار الباقة المناسبة.</p>
-        <div class="final-cta-buttons">
-          <a class="btn-download" href="https://github.com/mkms9648-code/awn-care-app/releases/latest/download/awn-care-app.apk"><i class="ti ti-brand-android"></i> تحميل التطبيق</a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="footer-brand">
-      <img class="mark-img" src="https://www.awnagent.com/sites/care/assets/awn-care-avatar.png" alt="عون كير" />
-      <span class="footer-brand-name">عون <span>كير</span></span>
     </div>
-    <div class="footer-copy">© عون كير — Awn Care، أحد منتجات Awn Agents</div>
-  </footer>
+    <div class="plans-note" data-i18n="plansNote"></div>
+  </div>
+
+  <!-- ============================================================ WHY PRICING WORKS -->
+  <div class="why-sec">
+    <div class="why-props">
+      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="why.p1"></span></div>
+      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.9L19 9.5l-4.9 1.8L12.3 16l-1.8-4.9L5.5 9.3l4.9-1.8L12 3z" stroke="#3BA7FF" stroke-width="1.5" stroke-linejoin="round"/></svg><span data-i18n="why.p2"></span></div>
+      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#3BA7FF" stroke-width="1.7"/><path d="M3.5 12h17" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="why.p3"></span></div>
+    </div>
+    <p class="why-line" data-i18n="why.line"></p>
+  </div>
+
+  <!-- ============================================================ FAQ -->
+  <div class="faq-sec">
+    <div class="faq-inner">
+      <div class="sec-title center" data-i18n="faq.title"></div>
+      <div class="faq-grid" id="faq-grid">
+        <details><summary><span data-i18n="faq.q1"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a1"></p></details>
+        <details><summary><span data-i18n="faq.q2"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a2"></p></details>
+        <details><summary><span data-i18n="faq.q3"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a3"></p></details>
+        <details><summary><span data-i18n="faq.q4"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a4"></p></details>
+        <details><summary><span data-i18n="faq.q5"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a5"></p></details>
+        <details><summary><span data-i18n="faq.q6"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a6"></p></details>
+        <details><summary><span data-i18n="faq.q7"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a7"></p></details>
+        <details><summary><span data-i18n="faq.q8"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a8"></p></details>
+        <details><summary><span data-i18n="faq.q9"></span><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="rgba(244,248,252,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><p data-i18n="faq.a9"></p></details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ FINAL CTA -->
+  <div class="final-cta" id="start">
+    <div class="final-inner">
+      <div class="final-copy">
+        <h2 data-i18n="finalCta.title"></h2>
+        <p data-i18n="finalCta.sub"></p>
+        <div class="final-buttons">
+          <a href="https://github.com/mkms9648-code/awn-care-app/releases/latest/download/awn-care-app.apk" class="plan-cta primary" data-i18n="finalCta.primary"></a>
+          <a href="#" class="plan-cta outline" data-i18n="finalCta.secondary"></a>
+        </div>
+      </div>
+      <div class="final-phone">
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="phone-top"><div class="phone-avatar"></div><span data-i18n="phoneName"></span></div>
+            <div class="phone-bubble bot" data-i18n="phoneMsg1"></div>
+            <div class="phone-bubble user" data-i18n="phoneMsg2"></div>
+            <div class="phone-mic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" stroke="#fff" stroke-width="1.8"/><path d="M5 11a7 7 0 0014 0M12 18v3" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ FOOTER -->
+  <div class="footer">
+    <div class="footer-brand">
+      <div class="footer-mark"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V6l-8-4z" stroke="#F4F8FC" stroke-width="2" stroke-linejoin="round"/></svg></div>
+      <span>Awn Care</span>
+    </div>
+    <div class="footer-copy" data-i18n="footer"></div>
+  </div>
 
   <script src="assets/pricing.js"></script>
 </body>
