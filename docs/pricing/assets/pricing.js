@@ -19,7 +19,7 @@ const TXT = {
       cardsClinic: "100 بطاقة مريض", cardsEmergency: "100 بطاقة مريض", cardsInpatient: "حتى 50 مريض نشط",
       clinicName: "العيادات", clinicF1: "توثيق بالصوت والنص", clinicF2: "تاريخ المريض الطبي", clinicF3: "الوصفة الطبية", clinicF4: "روشتة PDF", clinicF5: "الملفات والمرفقات",
       emergencyName: "الطوارئ", emergencyF1: "توثيق الحالات بالصوت", emergencyF2: "العلامات الحيوية", emergencyF3: "الطلبات والمرفقات", emergencyF4: "دخول وخروج المريض", emergencyF5: "نقل للأقسام",
-      inpatientName: "التنويم (الراوند)", inpatientF1: "متابعة الراوند اليومية", inpatientF2: "العلامات الحيوية", inpatientF3: "التحاليل والنتائج", inpatientF4: "الخطة العلاجية", inpatientF5: "ملاحظات الطبيب",
+      inpatientName: "الداخلي (الراوند)", inpatientF1: "متابعة الراوند اليومية", inpatientF2: "العلامات الحيوية", inpatientF3: "التحاليل والنتائج", inpatientF4: "الخطة العلاجية", inpatientF5: "ملاحظات الطبيب",
       badge: "الأكثر اختيارًا", proTagline: "كل الأدوات في خطة واحدة", proName: "Doctor Pro",
       proF1: "العيادات + الطوارئ + التنويم", proF2: "توثيق AI متقدم بالكامل", proF3: "نقل المريض بين الأقسام", proF4: "روشتة PDF وتقارير", proF5: "تحليلات أساسية",
       cta: "ابدأ الآن",
