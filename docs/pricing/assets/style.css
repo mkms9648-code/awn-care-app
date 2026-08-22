@@ -39,7 +39,8 @@ details > summary::-webkit-details-marker { display: none; }
   padding: 6px 15px; border-radius: 100px; margin-bottom: 16px;
 }
 .limited-badge i { font-size: 13px; }
-.region-title { font-size: 15px; font-weight: 700; color: rgba(244,248,252,0.7); margin-bottom: 22px; }
+.region-title { font-size: 21px; font-weight: 800; color: #F4F8FC; margin-bottom: 8px; }
+.limited-sub { font-size: 13px; font-weight: 600; color: #3ED598; margin-bottom: 22px; }
 
 .billing-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
 .billing-label { font-size: 13px; font-weight: 600; color: rgba(244,248,252,0.4); }

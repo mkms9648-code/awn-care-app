@@ -11,7 +11,7 @@ const TXT = {
     hero: { titleAccent: "خطط", titleRest: "تناسب طريقة عملك", sub: "من طبيب واحد إلى مستشفى كاملة، اختر الأدوات التي تحتاجها لإدارة رحلة المريض بذكاء.",
       value1: "توثيق ذكي بالـAI", value2: "رحلة مريض متصلة", value3: "بيانات آمنة ومشفّرة" },
     region: { title: "كل الأسعار بالجنيه المصري 🇪🇬" },
-    limited: { badge: "الأسعار الحالية لفترة محدودة" },
+    limited: { badge: "عرض خاص لفترة محدودة", sub: "احجز سعرك الحالي دلوقتي قبل ما يرتفع" },
     billing: { monthly: "شهري", yearly: "سنوي", save: "وفر حتى 20% عند الدفع السنوي" },
     perMonth: "/شهر",
     doctors: {
@@ -57,7 +57,7 @@ const TXT = {
     hero: { titleAccent: "Plans", titleRest: "that fit the way you practice.", sub: "From a single doctor to an entire hospital, choose the tools you need to manage the patient journey with AI.",
       value1: "AI-powered documentation", value2: "Connected patient workflow", value3: "Secure clinical data" },
     region: { title: "All prices in Egyptian Pound 🇪🇬" },
-    limited: { badge: "Current prices are for a limited time" },
+    limited: { badge: "Limited-time special offer", sub: "Lock in your current price before it goes up" },
     billing: { monthly: "Monthly", yearly: "Yearly", save: "Save up to 20% with annual billing" },
     perMonth: "/mo",
     doctors: {
