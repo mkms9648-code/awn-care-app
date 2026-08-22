@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../models/app_notification.dart';
 import '../models/chat_message.dart';
+import '../models/calendar_followup.dart';
 import '../models/encounter.dart';
 import '../models/nurse_task.dart';
 import '../models/patient_summary.dart';
@@ -1079,6 +1080,29 @@ class SupabaseService {
     );
     final list = (result as Map<String, dynamic>)['results'] as List<dynamic>? ?? [];
     return list.map((e) => NurseInfo.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// متابعات مجدولة عبر كل مرضى الدكتور، لكاليندر تاب التحليلات — مش زيارة
+  /// واحدة بس زي [patientSummary]. botKey ثابت 'clinic' لأن الكاليندر جزء
+  /// من تاب العيادة، لكن الاستعلام نفسه بيرجّع متابعات من أي موديول.
+  Future<List<CalendarFollowUp>> calendarFollowUps({
+    required String entryCode,
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    if (AppConfig.useMockData || _client == null) return [];
+    final result = await _client.rpc(
+      AppConfig.rpcCalendarFollowUps,
+      params: {
+        'p_platform': AppConfig.platform,
+        'p_bot_key': 'clinic',
+        'p_chat_id': entryCode,
+        'p_from': from.toUtc().toIso8601String(),
+        'p_to': to.toUtc().toIso8601String(),
+      },
+    );
+    final list = (result as Map<String, dynamic>)['results'] as List<dynamic>? ?? [];
+    return list.map((e) => CalendarFollowUp.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   RealtimeChannel? subscribeEncounters({

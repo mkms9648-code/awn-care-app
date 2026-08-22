@@ -5,7 +5,11 @@ import 'package:provider/provider.dart';
 
 import '../models/analytics_summary.dart';
 import '../providers/analytics_provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/calendar_provider.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import 'calendar_screen.dart';
 
 // ترتيب ثابت للألوان التصنيفية (هوية: قسم/تشخيص/دكتور...) — نفس الترتيب
 // دايمًا، ومايتلمسش لو عدد العناصر اتغيّر (كل عنصر ليه لون ثابت بالترتيب).
@@ -31,6 +35,12 @@ class AnalyticsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Analytics'),
         actions: [
+          if (provider.hasClinic)
+            IconButton(
+              icon: const Icon(Icons.calendar_month_outlined),
+              tooltip: 'Follow-up calendar',
+              onPressed: () => _openCalendar(context),
+            ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: provider.load, tooltip: 'Refresh'),
         ],
         bottom: provider.hasHospital && provider.hasClinic
@@ -51,6 +61,20 @@ class AnalyticsScreen extends StatelessWidget {
             : null,
       ),
       body: _buildBody(context, provider),
+    );
+  }
+
+  void _openCalendar(BuildContext context) {
+    final auth = context.read<AuthProvider>();
+    final supabase = context.read<SupabaseService>();
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider<CalendarProvider>(
+          create: (_) => CalendarProvider(supabaseService: supabase, entryCode: auth.entryCode!),
+          child: const CalendarScreen(),
+        ),
+      ),
     );
   }
 

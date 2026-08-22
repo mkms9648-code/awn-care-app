@@ -106,4 +106,5 @@ class AppConfig {
   static const String rpcNurseTaskComplete = 'app_nurse_task_complete';
   static const String rpcAssignOrderTask = 'app_assign_order_task';
   static const String rpcListNurses = 'app_list_nurses';
+  static const String rpcCalendarFollowUps = 'app_calendar_followups';
 }
