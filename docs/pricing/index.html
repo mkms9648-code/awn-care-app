@@ -8,33 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
   <link rel="icon" type="image/svg+xml" href="https://www.awnagent.com/favicon.svg" />
+  <link rel="stylesheet" href="/sites/shared/awn-nav.css" />
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body class="lang-ar">
 
-  <!-- ============================================================ NAVBAR -->
-  <div class="navbar">
-    <div class="nav-brand">
-      <div class="nav-mark">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2L4 6v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V6l-8-4z" stroke="#F4F8FC" stroke-width="2" stroke-linejoin="round"/></svg>
-      </div>
-      <span>Awn</span>
-    </div>
-    <div class="nav-links">
-      <a href="#" data-i18n="nav.app"></a>
-      <a href="#" data-i18n="nav.products"></a>
-      <a href="#pricing" class="nav-active" data-i18n="nav.pricing"></a>
-      <a href="https://wa.me/201289028428" target="_blank" rel="noopener" data-i18n="nav.contact"></a>
-    </div>
-    <div class="nav-right">
-      <div class="lang-switch">
-        <button id="lang-ar" class="lang-btn active" onclick="setLang('ar')">عربي</button>
-        <button id="lang-en" class="lang-btn" onclick="setLang('en')">EN</button>
-      </div>
-      <a href="#start" class="nav-cta" data-i18n="nav.cta"></a>
-    </div>
-  </div>
+  <!-- ============================================================ NAVBAR (shared Awn component, same as /care) -->
+  <div id="awn-nav"></div>
 
   <!-- ============================================================ HERO -->
   <div class="hero">
@@ -42,33 +24,17 @@
       <h1><span class="accent" data-i18n="hero.titleAccent"></span> <span data-i18n="hero.titleRest"></span></h1>
       <p class="hero-sub" data-i18n="hero.sub"></p>
       <div class="value-props">
-        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="#3BA7FF" stroke-width="1.7"/><path d="M8 11V7a4 4 0 018 0v4" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="hero.value1"></span></div>
-        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#3BA7FF" stroke-width="1.7"/><path d="M9 12l2 2 4-4" stroke="#3BA7FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hero.value2"></span></div>
-        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#3BA7FF" stroke-width="1.7"/><path d="M3 10h18" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="hero.value3"></span></div>
+        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="#2492FF" stroke-width="1.7"/><path d="M8 11V7a4 4 0 018 0v4" stroke="#2492FF" stroke-width="1.7"/></svg><span data-i18n="hero.value1"></span></div>
+        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#2492FF" stroke-width="1.7"/><path d="M9 12l2 2 4-4" stroke="#2492FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hero.value2"></span></div>
+        <div class="value-pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#2492FF" stroke-width="1.7"/><path d="M3 10h18" stroke="#2492FF" stroke-width="1.7"/></svg><span data-i18n="hero.value3"></span></div>
       </div>
     </div>
   </div>
 
-  <!-- ============================================================ REGION SELECTOR -->
+  <!-- ============================================================ PRICING INTRO -->
   <div class="region-sec" id="pricing">
+    <div class="limited-badge"><i class="ti ti-clock-bolt"></i><span data-i18n="limited.badge"></span></div>
     <div class="region-title" data-i18n="region.title"></div>
-    <div class="region-grid">
-      <button class="region-card" id="region-egypt" onclick="setRegion('egypt')">
-        <svg class="region-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke-width="1.7"/><circle cx="12" cy="12" r="3" stroke-width="1.7"/></svg>
-        <span class="region-label" data-i18n="region.egypt"></span>
-        <span class="region-sub" data-i18n="region.egyptSub"></span>
-      </button>
-      <button class="region-card" id="region-arab" onclick="setRegion('arab')">
-        <svg class="region-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 18l6-13 4 8 3-5 3 10H4z" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        <span class="region-label" data-i18n="region.arab"></span>
-        <span class="region-sub" data-i18n="region.arabSub"></span>
-      </button>
-      <button class="region-card" id="region-global" onclick="setRegion('global')">
-        <svg class="region-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke-width="1.7"/><path d="M3.5 12h17M12 3.5c2.3 2.3 3.5 5.2 3.5 8.5s-1.2 6.2-3.5 8.5c-2.3-2.3-3.5-5.2-3.5-8.5S9.7 5.8 12 3.5z" stroke-width="1.5"/></svg>
-        <span class="region-label" data-i18n="region.global"></span>
-        <span class="region-sub" data-i18n="region.globalSub"></span>
-      </button>
-    </div>
 
     <div class="billing-row">
       <span class="billing-label active" id="label-monthly" data-i18n="billing.monthly"></span>
@@ -90,13 +56,13 @@
           <div class="plan-price" id="price-clinic"></div>
           <div class="plan-permo" data-i18n="perMonth"></div>
           <ul class="plan-features">
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF1"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF2"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF3"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF4"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF5"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.clinicF5"></span></li>
           </ul>
-          <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+          <a href="https://wa.me/201289028428?text=مرحباً، عايز أبدأ في خطة العيادات" target="_blank" rel="noopener" class="plan-cta" data-i18n="doctors.cta"></a>
         </div>
 
         <div class="plan-card">
@@ -105,13 +71,13 @@
           <div class="plan-price" id="price-emergency"></div>
           <div class="plan-permo" data-i18n="perMonth"></div>
           <ul class="plan-features">
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF1"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF2"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF3"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF4"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF5"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.emergencyF5"></span></li>
           </ul>
-          <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+          <a href="https://wa.me/201289028428?text=مرحباً، عايز أبدأ في خطة الطوارئ" target="_blank" rel="noopener" class="plan-cta" data-i18n="doctors.cta"></a>
         </div>
 
         <div class="plan-card">
@@ -120,13 +86,13 @@
           <div class="plan-price" id="price-inpatient"></div>
           <div class="plan-permo" data-i18n="perMonth"></div>
           <ul class="plan-features">
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF1"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF2"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF3"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF4"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF5"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.inpatientF5"></span></li>
           </ul>
-          <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+          <a href="https://wa.me/201289028428?text=مرحباً، عايز أبدأ في خطة التنويم (الراوند)" target="_blank" rel="noopener" class="plan-cta" data-i18n="doctors.cta"></a>
         </div>
 
         <div class="plan-card plan-pro">
@@ -136,13 +102,13 @@
           <div class="plan-price pro" id="price-pro"></div>
           <div class="plan-permo" data-i18n="perMonth"></div>
           <ul class="plan-features pro">
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF1"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF2"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF3"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF4"></span></li>
-            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF5"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF1"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF2"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF3"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF4"></span></li>
+            <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="doctors.proF5"></span></li>
           </ul>
-          <a href="#start" class="plan-cta primary" data-i18n="doctors.cta"></a>
+          <a href="https://wa.me/201289028428?text=مرحباً، عايز أبدأ في خطة Doctor Pro" target="_blank" rel="noopener" class="plan-cta primary" data-i18n="doctors.cta"></a>
         </div>
 
       </div>
@@ -153,20 +119,20 @@
   <div class="followup-sec">
     <div class="followup-card">
       <div class="followup-flow" id="followup-flow">
-        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4V4z" stroke="#3BA7FF" stroke-width="1.6"/><path d="M9 4v6M4 9h6M15 4v3M15 15h5M19 4v6M4 15h5M4 19h5M15 19h5" stroke="#3BA7FF" stroke-width="1.6" stroke-linecap="round"/></svg></div><span data-i18n="followup.step1"></span></div>
+        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4V4z" stroke="#2492FF" stroke-width="1.6"/><path d="M9 4v6M4 9h6M15 4v3M15 15h5M19 4v6M4 15h5M4 19h5M15 19h5" stroke="#2492FF" stroke-width="1.6" stroke-linecap="round"/></svg></div><span data-i18n="followup.step1"></span></div>
         <svg class="flow-arrow" width="20" height="9" viewBox="0 0 20 9"><path d="M0 4.5h17M13 1l4 3.5-4 3.5" stroke="rgba(255,255,255,0.2)" stroke-width="1.4" fill="none"/></svg>
-        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 5h16a1 1 0 011 1v9a1 1 0 01-1 1H9l-5 4V6a1 1 0 011-1z" stroke="#3BA7FF" stroke-width="1.6" stroke-linejoin="round"/></svg></div><span data-i18n="followup.step2"></span></div>
+        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 5h16a1 1 0 011 1v9a1 1 0 01-1 1H9l-5 4V6a1 1 0 011-1z" stroke="#2492FF" stroke-width="1.6" stroke-linejoin="round"/></svg></div><span data-i18n="followup.step2"></span></div>
         <svg class="flow-arrow" width="20" height="9" viewBox="0 0 20 9"><path d="M0 4.5h17M13 1l4 3.5-4 3.5" stroke="rgba(255,255,255,0.2)" stroke-width="1.4" fill="none"/></svg>
-        <div class="flow-node"><div class="flow-icon active"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.9L19 9.5l-4.9 1.8L12.3 16l-1.8-4.9L5.5 9.3l4.9-1.8L12 3z" stroke="#3BA7FF" stroke-width="1.5" stroke-linejoin="round"/></svg></div><span data-i18n="followup.step3"></span></div>
+        <div class="flow-node"><div class="flow-icon active"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.9L19 9.5l-4.9 1.8L12.3 16l-1.8-4.9L5.5 9.3l4.9-1.8L12 3z" stroke="#2492FF" stroke-width="1.5" stroke-linejoin="round"/></svg></div><span data-i18n="followup.step3"></span></div>
         <svg class="flow-arrow" width="20" height="9" viewBox="0 0 20 9"><path d="M0 4.5h17M13 1l4 3.5-4 3.5" stroke="rgba(255,255,255,0.2)" stroke-width="1.4" fill="none"/></svg>
-        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="#3BA7FF" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="#3BA7FF" stroke-width="1.6"/></svg></div><span data-i18n="followup.step4"></span></div>
+        <div class="flow-node"><div class="flow-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="#2492FF" stroke-width="1.6" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="#2492FF" stroke-width="1.6"/></svg></div><span data-i18n="followup.step4"></span></div>
       </div>
       <div class="followup-copy">
         <div class="followup-title" data-i18n="followup.title"></div>
         <p class="followup-desc" data-i18n="followup.desc"></p>
         <div class="followup-bottom">
           <div><span class="followup-price" id="price-followup"></span><span class="followup-permo" data-i18n="perMonth"></span></div>
-          <a href="#start" class="followup-cta" data-i18n="followup.cta"></a>
+          <a href="https://wa.me/201289028428?text=مرحباً، عايز أضيف متابعة المرضى لخطتي" target="_blank" rel="noopener" class="followup-cta" data-i18n="followup.cta"></a>
         </div>
       </div>
     </div>
@@ -184,20 +150,20 @@
             <div class="team-price" id="price-team5"></div>
             <div class="plan-permo" data-i18n="perMonth"></div>
             <ul class="team-features">
-              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team5F1"></span></li>
-              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team5F2"></span></li>
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team5F1"></span></li>
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team5F2"></span></li>
             </ul>
-            <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+            <a href="https://wa.me/201289028428?text=مرحباً، عايز أبدأ في خطة فريق 5" target="_blank" rel="noopener" class="plan-cta" data-i18n="doctors.cta"></a>
           </div>
           <div class="team-card">
             <div class="team-name" data-i18n="teams.team10"></div>
             <div class="team-price" id="price-team10"></div>
             <div class="plan-permo" data-i18n="perMonth"></div>
             <ul class="team-features">
-              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team10F1"></span></li>
-              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team10F2"></span></li>
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team10F1"></span></li>
+              <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="teams.team10F2"></span></li>
             </ul>
-            <a href="#start" class="plan-cta" data-i18n="doctors.cta"></a>
+            <a href="https://wa.me/201289028428?text=مرحباً، عايز أبدأ في خطة فريق 10" target="_blank" rel="noopener" class="plan-cta" data-i18n="doctors.cta"></a>
           </div>
         </div>
         <div class="teams-note" data-i18n="teams.note"></div>
@@ -209,11 +175,11 @@
             <div class="hospital-title" data-i18n="hospital.title"></div>
             <p class="hospital-sub" data-i18n="hospital.sub"></p>
             <div class="hospital-wf">
-              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#3BA7FF" stroke-width="1.8"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" stroke="#3BA7FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf1"></span></div>
-              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#3BA7FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf2"></span></div>
-              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3 8-8" stroke="#3BA7FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9" stroke="#3BA7FF" stroke-width="1.8" stroke-linecap="round"/></svg></span><span data-i18n="hospital.wf3"></span></div>
-              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="3.2" stroke="#3BA7FF" stroke-width="1.8"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#3BA7FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf4"></span></div>
-              <div class="wf-row"><span class="wf-icon accent"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3BA7FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="hospital.wf5"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#2492FF" stroke-width="1.8"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" stroke="#2492FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf1"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#2492FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf2"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3 8-8" stroke="#2492FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9" stroke="#2492FF" stroke-width="1.8" stroke-linecap="round"/></svg></span><span data-i18n="hospital.wf3"></span></div>
+              <div class="wf-row"><span class="wf-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="3.2" stroke="#2492FF" stroke-width="1.8"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#2492FF" stroke-width="1.8"/></svg></span><span data-i18n="hospital.wf4"></span></div>
+              <div class="wf-row"><span class="wf-icon accent"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="hospital.wf5"></span></div>
             </div>
             <a href="https://wa.me/201289028428" target="_blank" rel="noopener" class="plan-cta primary" data-i18n="hospital.cta"></a>
           </div>
@@ -222,12 +188,12 @@
             <div class="hospital-price" id="price-hospital"></div>
             <div class="plan-permo" data-i18n="perMonth"></div>
             <ul class="hospital-features">
-              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat1"></span></li>
-              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat2"></span></li>
-              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat3"></span></li>
-              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat4"></span></li>
-              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat5"></span></li>
-              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2494F4" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat6"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat1"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat2"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat3"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat4"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat5"></span></li>
+              <li><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2492FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="hospital.feat6"></span></li>
             </ul>
           </div>
         </div>
@@ -240,9 +206,9 @@
   <!-- ============================================================ WHY PRICING WORKS -->
   <div class="why-sec">
     <div class="why-props">
-      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="why.p1"></span></div>
-      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.9L19 9.5l-4.9 1.8L12.3 16l-1.8-4.9L5.5 9.3l4.9-1.8L12 3z" stroke="#3BA7FF" stroke-width="1.5" stroke-linejoin="round"/></svg><span data-i18n="why.p2"></span></div>
-      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#3BA7FF" stroke-width="1.7"/><path d="M3.5 12h17" stroke="#3BA7FF" stroke-width="1.7"/></svg><span data-i18n="why.p3"></span></div>
+      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#2492FF" stroke-width="1.7"/></svg><span data-i18n="why.p1"></span></div>
+      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3l1.8 4.9L19 9.5l-4.9 1.8L12.3 16l-1.8-4.9L5.5 9.3l4.9-1.8L12 3z" stroke="#2492FF" stroke-width="1.5" stroke-linejoin="round"/></svg><span data-i18n="why.p2"></span></div>
+      <div class="why-pill"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#2492FF" stroke-width="1.7"/><path d="M3.5 12h17" stroke="#2492FF" stroke-width="1.7"/></svg><span data-i18n="why.p3"></span></div>
     </div>
     <p class="why-line" data-i18n="why.line"></p>
   </div>
@@ -299,5 +265,13 @@
   </div>
 
   <script src="assets/pricing.js"></script>
+
+  <!-- ============================================================ SHARED AWN NAVBAR (same component as /care) -->
+  <script>
+    window.AWN_FAMILY_LINKS = { agents: "/", fathi: "/fathi", care: "/care" };
+    window.AWN_ASSETS_BASE = "/sites/shared/assets/";
+    window.AWN_SITE = "care";
+  </script>
+  <script src="/sites/shared/awn-nav.js"></script>
 </body>
 </html>

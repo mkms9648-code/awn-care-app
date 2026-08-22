@@ -1,10 +1,8 @@
-// أسعار عون كير — بيانات الأسعار والترجمة + منطق العرض. نسخة ثابتة (بدون
-// build tool)، نفس البيانات المستخدمة في نسخة معاينة التصميم.
+// أسعار عون كير — بيانات الأسعار (مصر فقط) والترجمة + منطق العرض. نسخة ثابتة
+// (بدون build tool)، نفس البيانات المستخدمة في نسخة معاينة التصميم.
 
 const PRICING = {
-  egypt:  { currency: "egp", clinic: 999, emergency: 1499, inpatient: 1499, pro: 2999, followup: 499, team5: 8999, team10: 14999, hospital: 29999 },
-  arab:   { currency: "usd", clinic: 79,  emergency: 99,   inpatient: 99,   pro: 149,  followup: 39,  team5: 699,  team10: 999,   hospital: 3999 },
-  global: { currency: "usd", clinic: 99,  emergency: 129,  inpatient: 129,  pro: 199,  followup: 49,  team5: 699,  team10: 999,   hospital: 3999 },
+  currency: "egp", clinic: 999, emergency: 1499, inpatient: 1499, pro: 2999, followup: 499, team5: 8999, team10: 14999, hospital: 29999,
 };
 
 const TXT = {
@@ -12,7 +10,8 @@ const TXT = {
     nav: { app: "التطبيق", products: "المنتجات", pricing: "الأسعار", contact: "تواصل معنا", cta: "تجربة التطبيق" },
     hero: { titleAccent: "خطط", titleRest: "تناسب طريقة عملك", sub: "من طبيب واحد إلى مستشفى كاملة، اختر الأدوات التي تحتاجها لإدارة رحلة المريض بذكاء.",
       value1: "توثيق ذكي بالـAI", value2: "رحلة مريض متصلة", value3: "بيانات آمنة ومشفّرة" },
-    region: { title: "اختر منطقتك", egypt: "مصر", egyptSub: "جنيه مصري", arab: "الوطن العربي", arabSub: "الأردن، العراق، المغرب...", global: "العالم", globalSub: "باقي دول العالم" },
+    region: { title: "كل الأسعار بالجنيه المصري 🇪🇬" },
+    limited: { badge: "الأسعار الحالية لفترة محدودة" },
     billing: { monthly: "شهري", yearly: "سنوي", save: "وفر حتى 20% عند الدفع السنوي" },
     perMonth: "/شهر",
     doctors: {
@@ -57,7 +56,8 @@ const TXT = {
     nav: { app: "App", products: "Products", pricing: "Pricing", contact: "Contact", cta: "Try the app" },
     hero: { titleAccent: "Plans", titleRest: "that fit the way you practice.", sub: "From a single doctor to an entire hospital, choose the tools you need to manage the patient journey with AI.",
       value1: "AI-powered documentation", value2: "Connected patient workflow", value3: "Secure clinical data" },
-    region: { title: "Choose your region", egypt: "Egypt", egyptSub: "Egyptian Pound", arab: "Arab World", arabSub: "Jordan, Iraq, Morocco...", global: "Global", globalSub: "Rest of the world" },
+    region: { title: "All prices in Egyptian Pound 🇪🇬" },
+    limited: { badge: "Current prices are for a limited time" },
     billing: { monthly: "Monthly", yearly: "Yearly", save: "Save up to 20% with annual billing" },
     perMonth: "/mo",
     doctors: {
@@ -100,7 +100,7 @@ const TXT = {
   },
 };
 
-const state = { region: "arab", lang: "ar", billing: "monthly" };
+const state = { lang: "ar", billing: "monthly" };
 
 function fmtMoney(monthly, currency, lang, yearly) {
   const val = yearly ? Math.round(monthly * 0.8) : monthly;
@@ -113,9 +113,9 @@ function getPath(obj, path) {
 }
 
 function render() {
-  const { region, lang, billing } = state;
+  const { lang, billing } = state;
   const t = TXT[lang];
-  const r = PRICING[region];
+  const r = PRICING;
   const yearly = billing === "yearly";
 
   document.documentElement.setAttribute("lang", lang);
@@ -126,13 +126,6 @@ function render() {
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const val = getPath(t, el.getAttribute("data-i18n"));
     if (val != null) el.textContent = val;
-  });
-
-  document.getElementById("lang-ar").classList.toggle("active", lang === "ar");
-  document.getElementById("lang-en").classList.toggle("active", lang === "en");
-
-  ["egypt", "arab", "global"].forEach((key) => {
-    document.getElementById("region-" + key).classList.toggle("active", region === key);
   });
 
   document.getElementById("label-monthly").classList.toggle("active", !yearly);
@@ -150,11 +143,9 @@ function render() {
 }
 
 function setLang(l) { state.lang = l; render(); }
-function setRegion(r) { state.region = r; render(); }
 function toggleBilling() { state.billing = state.billing === "monthly" ? "yearly" : "monthly"; render(); }
 
 window.setLang = setLang;
-window.setRegion = setRegion;
 window.toggleBilling = toggleBilling;
 
 render();
