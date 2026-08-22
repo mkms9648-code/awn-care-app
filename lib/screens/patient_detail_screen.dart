@@ -379,37 +379,51 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
   Future<void> _editCommitment(Commitment c) async {
     if (c.eventId == null) return;
-    final textController = TextEditingController(text: c.text);
-    final daysController = TextEditingController(
-      text: c.dueAt != null ? '${c.dueAt!.difference(DateTime.now()).inDays}' : '',
-    );
+    final nameController = TextEditingController(text: c.text);
+    final daysRemaining = c.dueAt != null ? c.dueAt!.difference(DateTime.now()).inDays : 0;
+    final countController = TextEditingController(text: daysRemaining > 0 ? '$daysRemaining' : '');
+    String unit = 'daily';
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Follow-up'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: textController, decoration: const InputDecoration(labelText: 'Reason'), autofocus: true),
-              const SizedBox(height: 12),
-              TextField(
-                controller: daysController,
-                decoration: const InputDecoration(labelText: 'In how many days'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Edit Follow-up'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Follow-up name'), autofocus: true),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: unit,
+                  decoration: const InputDecoration(labelText: 'Frequency'),
+                  items: _followUpUnitLabels.entries
+                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setDialogState(() => unit = v);
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: countController,
+                  decoration: const InputDecoration(labelText: 'Count'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
-        ],
       ),
     );
-    final days = int.tryParse(daysController.text.trim());
-    if (confirmed != true || textController.text.trim().isEmpty || days == null || !mounted) return;
+    final count = int.tryParse(countController.text.trim());
+    if (confirmed != true || nameController.text.trim().isEmpty || count == null || count <= 0 || !mounted) return;
 
     final auth = context.read<AuthProvider>();
     await _runCorrection(
@@ -418,8 +432,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             botKey: widget.botKey,
             eventId: c.eventId!,
             newPayload: {
-              'text': textController.text.trim(),
-              'due_at': DateTime.now().add(Duration(days: days)).toUtc().toIso8601String(),
+              'text': nameController.text.trim(),
+              'due_at': DateTime.now().add(Duration(days: count * _followUpUnitDays[unit]!)).toUtc().toIso8601String(),
             },
           ),
       successMessage: 'Follow-up updated.',
@@ -1018,6 +1032,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     'rbs': 'mg/dL',
     'gcs': '',
   };
+  static const _followUpUnitLabels = {'daily': 'Daily', 'weekly': 'Weekly', 'monthly': 'Monthly'};
+  static const _followUpUnitDays = {'daily': 1, 'weekly': 7, 'monthly': 30};
 
   /// اسم البوت الخاص بالتاب ده كـ ChatBotKey — لفتح شات مخصّص لنفس المريض.
   ChatBotKey get _chatBotKey {
@@ -1404,48 +1420,63 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   }
 
   Future<void> _showAddFollowUpDialog() async {
-    final textController = TextEditingController(text: 'Follow-up visit');
-    final daysController = TextEditingController();
+    final nameController = TextEditingController();
+    final countController = TextEditingController();
+    String unit = 'weekly';
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Follow-up'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: textController,
-                decoration: const InputDecoration(labelText: 'Reason'),
-                autofocus: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: daysController,
-                decoration: const InputDecoration(labelText: 'In how many days'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Add Follow-up'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Follow-up name'),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: unit,
+                  decoration: const InputDecoration(labelText: 'Frequency'),
+                  items: _followUpUnitLabels.entries
+                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setDialogState(() => unit = v);
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: countController,
+                  decoration: const InputDecoration(labelText: 'Count'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
-        ],
       ),
     );
 
-    final days = int.tryParse(daysController.text.trim());
-    if (confirmed != true || textController.text.trim().isEmpty || days == null || !mounted) return;
+    final count = int.tryParse(countController.text.trim());
+    if (confirmed != true || nameController.text.trim().isEmpty || count == null || count <= 0 || !mounted) return;
     final auth = context.read<AuthProvider>();
     await _runAddAction(
       () => context.read<SupabaseService>().addFollowUp(
             entryCode: auth.entryCode!,
             botKey: widget.botKey,
             encounterId: widget.encounterId,
-            text: textController.text.trim(),
-            dueAt: DateTime.now().add(Duration(days: days)),
+            text: nameController.text.trim(),
+            dueAt: DateTime.now().add(Duration(days: count * _followUpUnitDays[unit]!)),
           ),
       successMessage: 'Follow-up added.',
     );
